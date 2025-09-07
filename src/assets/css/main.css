@@ -1,0 +1,95 @@
+:root {
+  --font_main: "United Sans Medium";
+  --font_main_light: "United Sans Light";
+  --font_mono: "Fira Mono";
+  --color_r: 170;
+  --color_g: 207;
+  --color_b: 209;
+  --color_black: #000000;
+  --color_light_black: #05080d;
+  --color_grey: #262828;
+  --color_red: #cc0000;
+  --color_yellow: #c4a000;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: var(--font_main), sans-serif;
+    color: rgb(var(--color_r), var(--color_g), var(--color_b));
+    background-color: var(--color_light_black);
+}
+
+body.solidBackground {
+    background: var(--color_light_black);
+}
+
+/* Neon button styles */
+.neon_button {
+  background: transparent;
+  color: rgb(var(--color_r), var(--color_g), var(--color_b));
+  border: 1px solid rgb(var(--color_r), var(--color_g), var(--color_b));
+  padding: 8px 16px;
+  font-family: var(--font_main);
+  font-size: 14px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.neon_button:hover {
+  box-shadow: 0 0 10px rgba(var(--color_r), var(--color_g), var(--color_b), 0.7);
+  text-shadow: 0 0 5px rgba(var(--color_r), var(--color_g), var(--color_b), 0.7);
+}
+
+/* Scanlines effect */
+.scanlines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  opacity: 0.3;
+}
+
+/* Panel titles */
+section > h3.title:first-child {
+    position: absolute;
+    margin: 0;
+    padding: 0 10px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
+    z-index: 10;
+}
+section > h3.title:first-child > p {
+    display: inline-block;
+    margin: 0;
+    width: 49%;
+}
+section > h3.title:first-child > p:last-child {
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.1);
+}
+::-webkit-scrollbar-thumb {
+    background: rgb(var(--color_r), var(--color_g), var(--color_b));
+}

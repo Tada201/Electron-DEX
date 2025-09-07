@@ -1,0 +1,91 @@
+/* Terminal styling adapted from eDEX-UI */
+#main_shell {
+    width: 55.5%;
+    height: 67.13vh;
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(135deg, rgba(var(--color_r), var(--color_g), var(--color_b), 0.07) 0%, transparent 70%);
+    border: 0.09vh solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
+    transition: all 0.7s ease;
+}
+
+#main_shell > h3.title {
+    top: -2.31vh;
+    left: 0vh;
+    width: calc(100% - 1.85vh);
+    height: 1.85vh;
+    background: var(--color_light_black);
+    z-index: 2;
+}
+
+#main_shell_greeting {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0vh;
+    color: rgb(var(--color_r), var(--color_g), var(--color_b));
+    font-family: var(--font_main_light), sans-serif;
+    font-size: 2.77vh;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+#chat_container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 2vh;
+    box-sizing: border-box;
+}
+
+#terminal_display {
+    flex: 1;
+    width: 100%;
+    height: calc(100% - 5vh);
+    font-family: var(--font_mono), monospace;
+    font-size: 1.4vh;
+    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.03);
+    border: 0.09vh solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.2);
+    overflow: hidden;
+}
+
+#chat_input_area {
+    height: 4vh;
+    display: flex;
+    gap: 1vh;
+    margin-top: 1vh;
+}
+
+#chat_input {
+    flex: 1;
+    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.1);
+    border: 0.09vh solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
+    color: rgb(var(--color_r), var(--color_g), var(--color_b));
+    font-family: var(--font_mono), monospace;
+    font-size: 1.4vh;
+    padding: 0.5vh 1vh;
+    outline: none;
+}
+
+#chat_input:focus {
+    border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
+    box-shadow: 0 0 1vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
+}
+
+#send_button {
+    padding: 0.5vh 2vh;
+    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.2);
+    border: 0.09vh solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.5);
+    color: rgb(var(--color_r), var(--color_g), var(--color_b));
+    font-family: var(--font_main), sans-serif;
+    font-size: 1.2vh;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#send_button:hover {
+    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
+    border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
+}
