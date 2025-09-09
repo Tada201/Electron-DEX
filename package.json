@@ -6,11 +6,14 @@
   "scripts": {
     "start": "electron .",
     "build": "electron-builder",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps",
+    "rebuild": "electron-rebuild",
+    "install-deps": "npm install && npm run rebuild"
   },
   "devDependencies": {
     "electron": "^21.0.0",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "electron-rebuild": "^3.2.9"
   },
   "keywords": [
     "edex",
