@@ -11,34 +11,108 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function updateVersionInfo() {
-    // Display Electron, Node.js, and Chrome versions
-    document.getElementById('electron-version').textContent = process.versions.electron;
-    document.getElementById('node-version').textContent = process.versions.node;
-    document.getElementById('chrome-version').textContent = process.versions.chrome;
+    const electronVersionEl = document.getElementById('electron-version');
+    const nodeVersionEl = document.getElementById('node-version');
+    const chromeVersionEl = document.getElementById('chrome-version');
+    
+    if (!electronVersionEl || !nodeVersionEl || !chromeVersionEl) {
+        console.warn('Version display elements not found in DOM');
+        return;
+    }
+    
+    const maxRetries = 3;
+    let retryCount = 0;
+    
+    const fetchVersions = () => {
+        retryCount++;
+        
+        if (window.electronAPI && window.electronAPI.sendAsync) {
+            window.electronAPI.sendAsync('get-versions')
+                .then(versions => {
+                    electronVersionEl.textContent = versions.electron || 'Unknown';
+                    nodeVersionEl.textContent = versions.node || 'Unknown';
+                    chromeVersionEl.textContent = versions.chrome || 'Unknown';
+                    console.log('✅ Versions fetched successfully');
+                })
+                .catch(error => {
+                    console.error(`Failed to fetch versions (attempt ${retryCount}):`, error);
+                    if (retryCount < maxRetries) {
+                        setTimeout(fetchVersions, retryCount * 1000);
+                    } else {
+                        setVersionFallback();
+                    }
+                });
+        } else {
+            console.warn('electronAPI not available, falling back to ipcRenderer');
+            if (window.require) {
+                try {
+                    const { ipcRenderer } = window.require('electron');
+                    ipcRenderer.invoke('get-versions')
+                        .then(versions => {
+                            electronVersionEl.textContent = versions.electron || 'Unknown';
+                            nodeVersionEl.textContent = versions.node || 'Unknown';
+                            chromeVersionEl.textContent = versions.chrome || 'Unknown';
+                            console.log('✅ Versions fetched via fallback');
+                        })
+                        .catch(error => {
+                            console.error(`Failed to fetch versions via fallback (attempt ${retryCount}):`, error);
+                            if (retryCount < maxRetries) {
+                                setTimeout(fetchVersions, retryCount * 1000);
+                            } else {
+                                setVersionFallback();
+                            }
+                        });
+                } catch (e) {
+                    setVersionFallback();
+                }
+            } else {
+                setVersionFallback();
+            }
+        }
+    };
+    
+    // Start fetching with shorter initial delay
+    setTimeout(fetchVersions, 500);
+    
+    function setVersionFallback() {
+        electronVersionEl.textContent = 'N/A';
+        nodeVersionEl.textContent = 'N/A';
+        chromeVersionEl.textContent = 'N/A';
+    }
 }
 
 function setupEventListeners() {
-    // Demo button
+    // Demo button - with null check
     const demoBtn = document.getElementById('demo-btn');
-    demoBtn.addEventListener('click', () => {
-        showMessage('Hello from Electron! 🎉', 'success');
-        
-        // Add some visual feedback
-        demoBtn.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-            demoBtn.style.transform = '';
-        }, 150);
-    });
+    if (demoBtn) {
+        demoBtn.addEventListener('click', () => {
+            showMessage('Hello from Electron! 🎉', 'success');
+            
+            // Add some visual feedback
+            demoBtn.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                demoBtn.style.transform = '';
+            }, 150);
+        });
+    }
     
-    // Notification button
+    // Notification button - with null check
     const notificationBtn = document.getElementById('notification-btn');
-    notificationBtn.addEventListener('click', () => {
-        showNotification();
-    });
+    if (notificationBtn) {
+        notificationBtn.addEventListener('click', () => {
+            showNotification();
+        });
+    }
 }
 
 function showMessage(text, type = 'info') {
     const messageEl = document.getElementById('message');
+    if (!messageEl) {
+        console.warn('Message element not found, using console instead:', text);
+        console.log(`[${type.toUpperCase()}] ${text}`);
+        return;
+    }
+    
     messageEl.textContent = text;
     messageEl.className = `message ${type}`;
     
@@ -87,6 +161,7 @@ function showWelcomeMessage() {
     setTimeout(() => {
         console.log('🚀 Electron DEX is ready!');
         console.log('Welcome to your new Electron application!');
+        console.log('Press Ctrl+Shift+D to toggle demo controls');
     }, 500);
 }
 
@@ -102,6 +177,15 @@ document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.shiftKey && e.key === 'I') {
         // This will be handled by the main process
         console.log('DevTools toggle requested');
+    }
+    
+    // Ctrl+Shift+D to toggle demo section
+    if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        const demoSection = document.getElementById('demo_section');
+        if (demoSection) {
+            demoSection.style.display = demoSection.style.display === 'none' ? 'block' : 'none';
+        }
     }
 });
 

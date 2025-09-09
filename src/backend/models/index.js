@@ -31,6 +31,8 @@ db.Message = require('./message.model')(sequelize, DataTypes);
 db.Tag = require('./tag.model')(sequelize, DataTypes);
 db.Folder = require('./folder.model')(sequelize, DataTypes);
 db.User = require('./user.model')(sequelize, DataTypes);
+db.Profile = require('./profile.model')(sequelize, DataTypes);
+db.Preference = require('./preference.model')(sequelize, DataTypes);
 
 // Define associations
 // Chat to Message (One-to-Many)
@@ -93,6 +95,26 @@ db.User.hasMany(db.Tag, {
   as: 'tags'
 });
 db.Tag.belongsTo(db.User, {
+  foreignKey: 'userId',
+  as: 'user'
+});
+
+// User to Profile (One-to-Many)
+db.User.hasMany(db.Profile, {
+  foreignKey: 'userId',
+  as: 'profiles'
+});
+db.Profile.belongsTo(db.User, {
+  foreignKey: 'userId',
+  as: 'user'
+});
+
+// User to Preference (One-to-Many)
+db.User.hasMany(db.Preference, {
+  foreignKey: 'userId',
+  as: 'preferences'
+});
+db.Preference.belongsTo(db.User, {
   foreignKey: 'userId',
   as: 'user'
 });

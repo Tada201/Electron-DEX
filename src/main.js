@@ -247,17 +247,14 @@ function initClock() {
 // Initialize session management
 function initSessionManagement() {
     const newChatBtn = document.getElementById("new_chat_btn");
-    const personaSelector = document.getElementById("persona_selector");
     const sessionSearch = document.getElementById("session_search");
     
     // New chat button with persona
     newChatBtn.addEventListener("click", () => {
-        const persona = personaSelector.value;
         const newSession = window.sessionManager.createNewSession();
-        newSession.persona = persona;
         renderSessions();
         loadCurrentSession();
-        addSystemMessage(`New ${persona} chat session created`);
+        addSystemMessage(`New chat session created`);
     });
     
     // Search sessions
@@ -1366,9 +1363,19 @@ class APISettingsManager {
             }
         });
 
+        // Save custom instructions
+        const baseSystemPrompt = document.getElementById('base_system_prompt')?.value || '';
+        const userCustomInstructions = document.getElementById('user_custom_instructions')?.value || '';
+        
+        const customInstructions = {
+            baseSystemPrompt,
+            userCustomInstructions
+        };
+
         // Store in localStorage (in production, use proper encryption)
         localStorage.setItem('edex_api_configs', JSON.stringify(configs));
         localStorage.setItem('edex_current_provider', this.currentProvider);
+        localStorage.setItem('edex_custom_instructions', JSON.stringify(customInstructions));
         
         this.updateStatus('[SYSTEM] ✓ Settings saved successfully!', 'success');
         
@@ -1384,6 +1391,19 @@ class APISettingsManager {
         try {
             const configs = JSON.parse(localStorage.getItem('edex_api_configs') || '{}');
             const currentProvider = localStorage.getItem('edex_current_provider') || 'openai';
+            
+            // Load custom instructions
+            const customInstructions = JSON.parse(localStorage.getItem('edex_custom_instructions') || '{}');
+            const baseSystemPrompt = document.getElementById('base_system_prompt');
+            const userCustomInstructions = document.getElementById('user_custom_instructions');
+            
+            if (baseSystemPrompt && customInstructions.baseSystemPrompt) {
+                baseSystemPrompt.value = customInstructions.baseSystemPrompt;
+            }
+            
+            if (userCustomInstructions && customInstructions.userCustomInstructions) {
+                userCustomInstructions.value = customInstructions.userCustomInstructions;
+            }
             
             // Load each provider's settings
             Object.keys(configs).forEach(provider => {

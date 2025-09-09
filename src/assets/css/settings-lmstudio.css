@@ -1,0 +1,678 @@
+/* Settings Modal Styling - eDEX-UI Terminal Aesthetic */
+/* Following eDEX-UI color scheme and styling patterns */
+
+/* Settings Modal Base Styles - eDEX-UI Theme */
+.lmstudio-settings-modal {
+  --edex-primary: rgb(var(--color_r), var(--color_g), var(--color_b));
+  --edex-secondary: rgba(var(--color_r), var(--color_g), var(--color_b), 0.7);
+  --edex-light-black: var(--color_light_black);
+  --edex-bg-dark: rgba(var(--color_r), var(--color_g), var(--color_b), 0.05);
+  --edex-bg-medium: rgba(var(--color_r), var(--color_g), var(--color_b), 0.1);
+  --edex-border: rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
+  --edex-border-active: rgb(var(--color_r), var(--color_g), var(--color_b));
+  --edex-text-primary: rgb(var(--color_r), var(--color_g), var(--color_b));
+  --edex-text-secondary: rgba(var(--color_r), var(--color_g), var(--color_b), 0.7);
+  --edex-grid-color: rgba(var(--color_r), var(--color_g), var(--color_b), 0.1);
+  --edex-glow: rgba(var(--color_r), var(--color_g), var(--color_b), 0.4);
+}
+
+/* Modal Container - eDEX-UI Terminal Style */
+.lmstudio-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(var(--color_light_black), 0.95);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: edex-fadeIn 0.3s cubic-bezier(0.4, 0, 1, 1);
+}
+
+@keyframes edex-fadeIn {
+  from {
+    opacity: 0;
+    background: rgba(var(--color_light_black), 0);
+  }
+  to {
+    opacity: 1;
+    background: rgba(var(--color_light_black), 0.95);
+  }
+}
+
+.lmstudio-modal-container {
+  width: 90vw;
+  max-width: 120vh;
+  height: 85vh;
+  background: var(--edex-bg-dark);
+  border: 0.18vh solid var(--edex-border);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  animation: edex-zoomIn 0.4s cubic-bezier(0.4, 0, 1, 1);
+  box-shadow:
+    0 0 15px var(--edex-glow),
+    inset 0 0 15px rgba(var(--color_r), var(--color_g), var(--color_b), 0.05);
+}
+
+@keyframes edex-zoomIn {
+  from {
+    transform: translateY(-5vh) scale(0.95);
+    opacity: 0;
+    box-shadow: 0 0 0 rgba(var(--color_r), var(--color_g), var(--color_b), 0);
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    box-shadow:
+      0 0 15px var(--edex-glow),
+      inset 0 0 15px rgba(var(--color_r), var(--color_g), var(--color_b), 0.05);
+  }
+}
+
+/* Grid Background Pattern - eDEX-UI Style */
+.lmstudio-grid-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(var(--edex-grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--edex-grid-color) 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Header - eDEX-UI Terminal Style */
+.lmstudio-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5vh 2vh;
+  border-bottom: 0.18vh solid var(--edex-border);
+  background: linear-gradient(90deg,
+    rgba(var(--color_r), var(--color_g), var(--color_b), 0.07) 0%,
+    transparent 100%);
+  position: relative;
+}
+
+.lmstudio-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--edex-primary) 50%,
+    transparent 100%);
+  animation: edex-glowPulse 2s ease-in-out infinite;
+}
+
+@keyframes edex-glowPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.lmstudio-title {
+  font-family: var(--font_main), sans-serif;
+  font-size: 1.8vh;
+  font-weight: normal;
+  color: var(--edex-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.1vh;
+}
+
+.lmstudio-subtitle {
+  font-family: var(--font_mono), monospace;
+  font-size: 1.2vh;
+  color: var(--edex-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05vh;
+}
+
+/* Close Button - eDEX-UI Terminal Style */
+.lmstudio-close-btn {
+  background: transparent;
+  border: 0.18vh solid var(--edex-border);
+  color: var(--edex-text-primary);
+  font-family: var(--font_main), sans-serif;
+  font-size: 1.2vh;
+  font-weight: normal;
+  width: 3vh;
+  height: 3vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.lmstudio-close-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: var(--edex-primary);
+  transition: left 0.3s ease;
+  z-index: -1;
+}
+
+.lmstudio-close-btn:hover {
+  color: var(--edex-bg-dark);
+  transform: scale(1.05);
+  box-shadow: 0 0 15px var(--edex-glow);
+}
+
+.lmstudio-close-btn:hover::before {
+  left: 0;
+}
+
+/* Body Layout - Split Panel */
+.lmstudio-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Left Navigation Rail - eDEX-UI Terminal Style */
+.lmstudio-nav-rail {
+  width: 25vh;
+  background: var(--edex-bg-medium);
+  border-right: 0.18vh solid var(--edex-border);
+  padding: 1.5vh 1vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.lmstudio-nav-rail::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    var(--edex-primary) 50%,
+    transparent 100%);
+  animation: edex-glowPulse 3s ease-in-out infinite;
+}
+
+.lmstudio-nav-header {
+  font-family: var(--font_main), sans-serif;
+  font-size: 1.4vh;
+  font-weight: normal;
+  color: var(--edex-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.1vh;
+  margin-bottom: 1.5vh;
+  padding-bottom: 1vh;
+  border-bottom: 0.18vh solid var(--edex-border);
+}
+
+.lmstudio-nav-item {
+  display: flex;
+  align-items: center;
+  padding: 0.8vh 1vh;
+  margin: 0.3vh 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+  font-family: var(--font_main), sans-serif;
+  font-size: 1.1vh;
+  color: var(--edex-text-secondary);
+  position: relative;
+  overflow: hidden;
+}
+
+.lmstudio-nav-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(var(--color_r), var(--color_g), var(--color_b), 0.1) 100%);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+
+.lmstudio-nav-item:hover {
+  color: var(--edex-primary);
+  background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.05);
+  border-left-color: var(--edex-primary);
+  transform: translateX(2px);
+}
+
+.lmstudio-nav-item:hover::before {
+  transform: translateX(0);
+}
+
+.lmstudio-nav-item.active {
+  color: var(--edex-primary);
+  background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.1);
+  border-left-color: var(--edex-primary);
+  box-shadow:
+    -2px 0 10px var(--edex-glow),
+    inset 0 0 10px rgba(var(--color_r), var(--color_g), var(--color_b), 0.1);
+}
+
+.lmstudio-nav-item.active::after {
+  content: '';
+  position: absolute;
+  right: 1vh;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid var(--edex-primary);
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+}
+
+.lmstudio-nav-icon {
+  margin-right: 0.8vh;
+  font-size: 1.2vh;
+  filter: grayscale(1);
+  transition: filter 0.2s ease;
+}
+
+.lmstudio-nav-item:hover .lmstudio-nav-icon,
+.lmstudio-nav-item.active .lmstudio-nav-icon {
+  filter: grayscale(0);
+  text-shadow: 0 0 5px currentColor;
+}
+
+/* Right Content Panel - eDEX-UI Terminal Style */
+.lmstudio-content-panel {
+  flex: 1;
+  padding: 2vh 2.5vh;
+  overflow-y: auto;
+  position: relative;
+  background: var(--edex-bg-dark);
+}
+
+.lmstudio-content-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    var(--edex-primary) 0%,
+    transparent 100%);
+  opacity: 0.3;
+}
+
+.lmstudio-section-header {
+  font-family: var(--font_main), sans-serif;
+  font-size: 1.6vh;
+  font-weight: normal;
+  color: var(--edex-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05vh;
+  margin-bottom: 1.5vh;
+  padding-bottom: 0.8vh;
+  border-bottom: 0.18vh solid var(--edex-border);
+  position: relative;
+}
+
+.lmstudio-section-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 30px;
+  height: 2px;
+  background: var(--edex-primary);
+  box-shadow: 0 0 10px var(--edex-glow);
+}
+
+/* Settings Groups */
+.lmstudio-settings-group {
+  margin-bottom: 2vh;
+  padding: 1.5vh;
+  background: var(--lm-bg-medium);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.lmstudio-settings-group::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, 
+    transparent 30%,
+    rgba(0, 212, 255, 0.02) 50%,
+    transparent 70%);
+  animation: lmstudio-scanline 8s linear infinite;
+}
+
+@keyframes lmstudio-scanline {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.lmstudio-group-title {
+  font-family: 'Fira Mono', monospace;
+  font-size: 1.2vh;
+  font-weight: bold;
+  color: var(--lm-primary-teal);
+  text-transform: uppercase;
+  letter-spacing: 0.05vh;
+  margin-bottom: 1vh;
+  text-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
+}
+
+/* Form Elements - LM Studio Style */
+.lmstudio-form-label {
+  font-family: 'Fira Mono', monospace;
+  font-size: 1vh;
+  color: var(--lm-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05vh;
+  margin-bottom: 0.5vh;
+  display: block;
+}
+
+.lmstudio-form-input,
+.lmstudio-form-select {
+  width: 100%;
+  padding: 0.8vh 1vh;
+  background: var(--lm-bg-dark);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  color: var(--lm-text-primary);
+  font-family: 'Fira Mono', monospace;
+  font-size: 1.1vh;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+}
+
+.lmstudio-form-input:focus,
+.lmstudio-form-select:focus {
+  outline: none;
+  border-color: var(--lm-primary-cyan);
+  box-shadow: 
+    0 0 10px rgba(0, 212, 255, 0.3),
+    inset 0 0 10px rgba(0, 212, 255, 0.1);
+  background: rgba(0, 212, 255, 0.05);
+}
+
+.lmstudio-form-input::placeholder,
+.lmstudio-form-select::placeholder {
+  color: rgba(160, 160, 160, 0.5);
+  font-family: 'Fira Mono', monospace;
+}
+
+/* Toggle Switches - LM Studio Style */
+.lmstudio-toggle {
+  position: relative;
+  width: 4vh;
+  height: 2vh;
+  background: var(--lm-bg-light);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.lmstudio-toggle.active {
+  background: var(--lm-primary-cyan);
+  border-color: var(--lm-primary-cyan);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.lmstudio-toggle-slider {
+  position: absolute;
+  top: 0.2vh;
+  left: 0.2vh;
+  width: 1.6vh;
+  height: 1.6vh;
+  background: var(--lm-bg-dark);
+  border: 1px solid rgba(0, 212, 255, 0.5);
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.lmstudio-toggle.active .lmstudio-toggle-slider {
+  transform: translateX(2vh);
+  border-color: var(--lm-bg-dark);
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
+}
+
+/* Sliders - LM Studio Style */
+.lmstudio-slider {
+  width: 100%;
+  height: 0.4vh;
+  background: var(--lm-bg-light);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.lmstudio-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.6vh;
+  height: 1.6vh;
+  background: var(--lm-primary-cyan);
+  border: 1px solid var(--lm-bg-dark);
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+  transition: all 0.2s ease;
+}
+
+.lmstudio-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.8);
+}
+
+.lmstudio-slider::-moz-range-thumb {
+  width: 1.6vh;
+  height: 1.6vh;
+  background: var(--lm-primary-cyan);
+  border: 1px solid var(--lm-bg-dark);
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+/* Buttons - LM Studio Style */
+.lmstudio-button {
+  padding: 0.8vh 1.5vh;
+  background: transparent;
+  border: 1px solid var(--lm-primary-cyan);
+  color: var(--lm-primary-cyan);
+  font-family: 'Fira Mono', monospace;
+  font-size: 1vh;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.lmstudio-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: var(--lm-primary-cyan);
+  transition: left 0.3s ease;
+  z-index: -1;
+}
+
+.lmstudio-button:hover {
+  color: var(--lm-bg-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+}
+
+.lmstudio-button:hover::before {
+  left: 0;
+}
+
+.lmstudio-button:active {
+  transform: translateY(0);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+}
+
+/* Description Text */
+.lmstudio-description {
+  font-family: 'Fira Mono', monospace;
+  font-size: 0.9vh;
+  color: var(--lm-text-secondary);
+  margin-top: 0.3vh;
+  line-height: 1.4;
+}
+
+/* Animations */
+@keyframes lmstudio-slideInLeft {
+  from { 
+    transform: translateX(-3vh);
+    opacity: 0;
+  }
+  to { 
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes lmstudio-slideInRight {
+  from { 
+    transform: translateX(3vh);
+    opacity: 0;
+  }
+  to { 
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes lmstudio-glowPulse {
+  0%, 100% { 
+    opacity: 0.5;
+    text-shadow: 0 0 5px currentColor;
+  }
+  50% { 
+    opacity: 1;
+    text-shadow: 0 0 15px currentColor;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .lmstudio-modal-container {
+    width: 95vw;
+    height: 95vh;
+  }
+  
+  .lmstudio-body {
+    flex-direction: column;
+  }
+  
+  .lmstudio-nav-rail {
+    width: 100%;
+    height: 8vh;
+    border-right: none;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  
+  .lmstudio-nav-item {
+    min-width: 8vh;
+    flex-direction: column;
+    text-align: center;
+    padding: 0.5vh;
+  }
+  
+  .lmstudio-nav-icon {
+    margin-right: 0;
+    margin-bottom: 0.3vh;
+  }
+  
+  .lmstudio-content-panel {
+    padding: 1vh 1.5vh;
+  }
+}
+
+/* Settings Trigger Button */
+.lmstudio-trigger-btn {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(0, 255, 136, 0.1) 100%);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+  z-index: 100;
+}
+
+.lmstudio-trigger-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(0, 212, 255, 0.2) 50%,
+    transparent 100%);
+  transition: left 0.5s ease;
+}
+
+.lmstudio-trigger-btn:hover::before {
+  left: 100%;
+}
+
+.lmstudio-trigger-btn:hover {
+  border-color: var(--lm-primary-cyan);
+  box-shadow:
+    0 0 20px rgba(0, 212, 255, 0.4),
+    inset 0 0 20px rgba(0, 212, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Additional Form Input Styling */
+.lmstudio-form-input {
+  width: 100%;
+  padding: 0.8vh 1vh;
+  background: var(--lm-bg-dark);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  color: var(--lm-text-primary);
+  font-family: 'Fira Mono', monospace;
+  font-size: 1.1vh;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.lmstudio-form-input:focus {
+  outline: none;
+  border-color: var(--lm-primary-cyan);
+  box-shadow:
+    0 0 10px rgba(0, 212, 255, 0.3),
+    inset 0 0 10px rgba(0, 212, 255, 0.1);
+  background: rgba(0, 212, 255, 0.05);
+}

@@ -6,6 +6,9 @@ const bodyParser = require('body-parser');
 const { RateLimiterMemory } = require('rate-limiter-flexible');
 require('dotenv').config();
 
+// Supabase integration
+const { initSupabase } = require('./utils/supabase');
+
 // Database initialization
 const { initializeDatabase } = require('./utils/database');
 
@@ -14,9 +17,20 @@ const chatRoutes = require('./routes/chat');
 const configRoutes = require('./routes/config');
 const tagsRoutes = require('./routes/tags');
 const foldersRoutes = require('./routes/folders');
+const profilesRoutes = require('./routes/profiles');
+const dataManagementRoutes = require('./routes/datamanagement');
+const preferencesRoutes = require('./routes/preferences');
+const toolsRoutes = require('./routes/tools');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Initialize Supabase if credentials are provided
+if (process.env.SUPABASE_URL && process.env.SUPABASE_KEY) {
+  initSupabase(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+} else {
+  console.log('ℹ️  Supabase credentials not provided. Using local SQLite database.');
+}
 
 // Security middleware
 app.use(helmet());
@@ -62,6 +76,10 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/tags', tagsRoutes);
 app.use('/api/folders', foldersRoutes);
+app.use('/api/profiles', profilesRoutes);
+app.use('/api/data', dataManagementRoutes);
+app.use('/api/preferences', preferencesRoutes);
+app.use('/api/tools', toolsRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -85,7 +103,11 @@ app.get('/', (req, res) => {
       chat: '/api/chat',
       config: '/api/config',
       tags: '/api/tags',
-      folders: '/api/folders'
+      folders: '/api/folders',
+      profiles: '/api/profiles',
+      data: '/api/data',
+      preferences: '/api/preferences',
+      tools: '/api/tools'
     }
   });
 });
@@ -145,6 +167,32 @@ const server = app.listen(PORT, '0.0.0.0', () => {
    • PUT  /api/folders/:id - Update folder
    • DELETE /api/folders/:id - Delete folder
    • POST /api/folders/:folderId/chat/:chatId - Move chat to folder
+   • GET  /api/profiles - Get all profiles
+   • POST /api/profiles - Create new profile
+   • GET  /api/profiles/:id - Get profile by ID
+   • PUT  /api/profiles/:id - Update profile
+   • DELETE /api/profiles/:id - Delete profile
+   • POST /api/profiles/:id/default - Set default profile
+   • GET  /api/data/export/:chatId - Export chat data
+   • GET  /api/data/export-all - Export all chats data
+   • POST /api/data/import - Import chat data
+   • GET  /api/data/search - Search chats
+   • DELETE /api/data/bulk-delete - Bulk delete chats
+   • POST /api/data/bulk-move - Bulk move chats to folder
+   • GET  /api/data/statistics - Get chat statistics
+   • GET  /api/preferences/:userId - Get all preferences for user
+   • GET  /api/preferences/:userId/:key - Get preference by user ID and key
+   • POST /api/preferences - Create or update preference
+   • PUT  /api/preferences/:userId/:key - Update preference
+   • DELETE /api/preferences/:userId/:key - Delete preference
+   • GET  /api/preferences/:userId/category/:category - Get preferences by category
+   • PUT  /api/preferences/:userId/bulk - Bulk update preferences
+   • GET  /api/tools - Get all tools
+   • POST /api/tools - Create new tool
+   • GET  /api/tools/:id - Get tool by ID
+   • PUT  /api/tools/:id - Update tool
+   • DELETE /api/tools/:id - Delete tool
+   • POST /api/tools/execute/:id - Execute tool
   `);
 });
 

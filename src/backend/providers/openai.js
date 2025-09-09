@@ -80,13 +80,14 @@ class OpenAIProvider {
   }
 
   /**
-   * Send message to OpenAI API
+   * Send message to OpenAI API with streaming support
    * @param {string} model - Model to use
    * @param {string} message - Message to send
    * @param {object} config - Configuration options
+   * @param {function} onChunk - Callback for streaming chunks
    * @returns {object} Response from API
    */
-  async sendMessage(model, message, config = {}) {
+  async sendMessage(model, message, config = {}, onChunk = null) {
     const apiKey = process.env.OPENAI_API_KEY;
     
     if (!apiKey) {
@@ -112,27 +113,83 @@ class OpenAIProvider {
       max_tokens: config.maxTokens || 2048,
       top_p: config.topP || 1.0,
       frequency_penalty: config.frequencyPenalty || 0,
-      presence_penalty: config.presencePenalty || 0
+      presence_penalty: config.presencePenalty || 0,
+      stream: !!onChunk // Enable streaming if onChunk callback is provided
     };
 
     try {
-      const response = await client.post('/chat/completions', requestData, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
+      if (onChunk) {
+        // Streaming implementation
+        const response = await client.post('/chat/completions', requestData, {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          responseType: 'stream'
+        });
+
+        let fullContent = '';
+        let usage = null;
+        
+        // Process the stream
+        for await (const chunk of response.data) {
+          const lines = chunk.toString().split('\n').filter(line => line.trim() !== '');
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              
+              if (data === '[DONE]') {
+                // Stream finished
+                onChunk({ type: 'done', content: fullContent, usage });
+                return {
+                  content: fullContent,
+                  usage: usage,
+                  provider: this.name,
+                  model: model
+                };
+              }
+              
+              try {
+                const parsed = JSON.parse(data);
+                const choice = parsed.choices[0];
+                
+                if (choice.delta && choice.delta.content) {
+                  const content = choice.delta.content;
+                  fullContent += content;
+                  onChunk({ type: 'content', content });
+                }
+                
+                // Extract usage information if available
+                if (parsed.usage) {
+                  usage = parsed.usage;
+                }
+              } catch (parseError) {
+                // Ignore parsing errors for streaming chunks
+                console.warn('Failed to parse streaming chunk:', parseError);
+              }
+            }
+          }
         }
-      });
+      } else {
+        // Non-streaming implementation (existing behavior)
+        const response = await client.post('/chat/completions', requestData, {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
 
-      const choice = response.data.choices[0];
-      
-      return {
-        content: choice.message.content,
-        usage: response.data.usage,
-        finishReason: choice.finish_reason,
-        provider: this.name,
-        model: model
-      };
-
+        const choice = response.data.choices[0];
+        
+        return {
+          content: choice.message.content,
+          usage: response.data.usage,
+          finishReason: choice.finish_reason,
+          provider: this.name,
+          model: model
+        };
+      }
     } catch (error) {
       if (error.response) {
         const status = error.response.status;

@@ -58,6 +58,7 @@ div.modal_popup > h1 {
     font-size: 4vh;
     margin: 0vh;
     margin-bottom: 2vh;
+
 }
 
 div.modal_popup > h1 i {
@@ -400,22 +401,25 @@ details#shortcutsHelpAccordeon2 table td:nth-child(3) input[type="checkbox"] {
     padding: 1.5vh 2vh;
     margin: 0.5vh 1vh;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     border: 0.1vh solid transparent;
     font-family: var(--font_mono);
     position: relative;
+    animation: slideInLeft 0.4s ease-out;
 }
 
 .provider-tab:hover {
     background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.1);
     border-color: rgba(var(--color_r), var(--color_g), var(--color_b), 0.5);
     box-shadow: 0 0 1vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
+    transform: translateX(0.5vh);
 }
 
 .provider-tab.active {
     background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.15);
     border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
     box-shadow: 0 0 1.5vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.4);
+    animation: scaleIn 0.3s ease-out;
 }
 
 .provider-tab.coming-soon {
@@ -529,24 +533,53 @@ details#shortcutsHelpAccordeon2 table td:nth-child(3) input[type="checkbox"] {
 .form-select {
     width: 100%;
     padding: 1.2vh 1vh;
-    background: var(--color_black);
+    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.15);
     border: 0.15vh solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.5);
     color: rgb(var(--color_r), var(--color_g), var(--color_b));
     font-size: 1.6vh;
     font-family: var(--font_mono);
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    animation: fadeIn 0.3s ease-out;
+    border-radius: 0.3vh;
+    box-shadow: 0 0 0.3vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.2);
 }
 
 .form-input:focus,
 .form-select:focus {
     outline: none;
     border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
-    box-shadow: 0 0 1vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.4);
-    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.05);
+    box-shadow: 0 0 1vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.6);
+    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.2);
+    transform: scale(1.01);
+}
+
+.form-input:active,
+.form-select:active {
+    border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
+    box-shadow: 0 0 1.2vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.7);
+    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.25);
+    transform: scale(0.99);
 }
 
 .form-input::placeholder {
     color: rgba(var(--color_r), var(--color_g), var(--color_b), 0.5);
+}
+
+/* Dropdown options styling for form-select */
+.form-select option {
+    background: var(--color_light_black);
+    color: rgb(var(--color_r), var(--color_g), var(--color_b));
+    font-family: var(--font_mono);
+    font-size: 1.6vh;
+    padding: 1.2vh 1vh;
+}
+
+.form-select option:hover {
+    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
+}
+
+.form-select:focus option:checked {
+    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.2);
 }
 
 .toggle-visibility {
@@ -581,6 +614,30 @@ details#shortcutsHelpAccordeon2 table td:nth-child(3) input[type="checkbox"] {
     background: rgb(var(--color_r), var(--color_g), var(--color_b));
     cursor: pointer;
     box-shadow: 0 0 0.5vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.6);
+}
+
+.avatar-preview-container {
+    margin-top: 1vh;
+}
+
+.avatar-preview {
+    width: 5vh;
+    height: 5vh;
+    border: 0.1vh solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5vh;
+    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.1);
+    color: rgb(var(--color_r), var(--color_g), var(--color_b));
+    overflow: hidden;
+}
+
+.avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .validation-message {
@@ -639,9 +696,11 @@ details#shortcutsHelpAccordeon2 table td:nth-child(3) input[type="checkbox"] {
     font-weight: bold;
     text-transform: uppercase;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     position: relative;
     overflow: hidden;
+    animation: slideInUp 0.3s ease-out;
+    border-radius: 0.3vh;
 }
 
 .modal-button.cancel {
@@ -653,6 +712,14 @@ details#shortcutsHelpAccordeon2 table td:nth-child(3) input[type="checkbox"] {
     background: var(--color_red);
     color: var(--color_black);
     box-shadow: 0 0 1vh var(--color_red);
+    transform: translateY(-0.2vh);
+}
+
+.modal-button.cancel:active {
+    background: var(--color_red);
+    color: var(--color_black);
+    box-shadow: 0 0 1.5vh var(--color_red);
+    transform: translateY(0);
 }
 
 .modal-button.test {
@@ -664,6 +731,14 @@ details#shortcutsHelpAccordeon2 table td:nth-child(3) input[type="checkbox"] {
     background: var(--color_yellow);
     color: var(--color_black);
     box-shadow: 0 0 1vh var(--color_yellow);
+    transform: translateY(-0.2vh);
+}
+
+.modal-button.test:active {
+    background: var(--color_yellow);
+    color: var(--color_black);
+    box-shadow: 0 0 1.5vh var(--color_yellow);
+    transform: translateY(0);
 }
 
 .modal-button.save {
@@ -675,6 +750,14 @@ details#shortcutsHelpAccordeon2 table td:nth-child(3) input[type="checkbox"] {
     background: rgb(var(--color_r), var(--color_g), var(--color_b));
     color: var(--color_black);
     box-shadow: 0 0 1vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.8);
+    transform: translateY(-0.2vh);
+}
+
+.modal-button.save:active {
+    background: rgb(var(--color_r), var(--color_g), var(--color_b));
+    color: var(--color_black);
+    box-shadow: 0 0 1.5vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.9);
+    transform: translateY(0);
 }
 
 .modal-button:disabled {
@@ -685,6 +768,217 @@ details#shortcutsHelpAccordeon2 table td:nth-child(3) input[type="checkbox"] {
 .modal-button:disabled:hover {
     background: transparent;
     box-shadow: none;
+}
+
+/* Profile Management Styles */
+
+.profile-management-container {
+    display: flex;
+    gap: 2vh;
+    height: 100%;
+}
+
+.profile-list-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1vh;
+}
+
+.profile-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1vh;
+}
+
+.profile-list-header h3 {
+    margin: 0;
+    font-size: 2.2vh;
+    color: rgb(var(--color_r), var(--color_g), var(--color_b));
+}
+
+.profile-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1vh;
+}
+
+.profile-item {
+    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.05);
+    border: 0.1vh solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
+    border-radius: 0.3vh;
+    padding: 1.5vh;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    animation: slideInRight 0.4s ease-out;
+}
+
+.profile-item:hover {
+    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.1);
+    border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
+    box-shadow: 0 0 1vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
+    transform: translateY(-0.2vh);
+}
+
+.profile-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1vh;
+}
+
+.profile-name {
+    font-size: 1.8vh;
+    font-weight: bold;
+    color: rgb(var(--color_r), var(--color_g), var(--color_b));
+}
+
+.profile-default-tag {
+    background: rgb(var(--color_r), var(--color_g), var(--color_b));
+    color: var(--color_black);
+    font-size: 1.2vh;
+    padding: 0.3vh 0.6vh;
+    border-radius: 0.2vh;
+    font-weight: bold;
+}
+
+.profile-item-description {
+    font-size: 1.4vh;
+    color: rgba(var(--color_r), var(--color_g), var(--color_b), 0.7);
+    margin-bottom: 1.5vh;
+    line-height: 1.4;
+}
+
+.profile-item-actions {
+    display: flex;
+    gap: 1vh;
+    justify-content: flex-end;
+}
+
+.profile-editor-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.profile-editor-container h3 {
+    margin: 0 0 2vh 0;
+    font-size: 2.2vh;
+    color: rgb(var(--color_r), var(--color_g), var(--color_b));
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1vh;
+    margin-top: 2vh;
+    padding-top: 2vh;
+    border-top: 0.1vh solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
+}
+
+.modal-button.delete {
+    border-color: var(--color_red);
+    color: var(--color_red);
+}
+
+.modal-button.delete:hover {
+    background: var(--color_red);
+    color: var(--color_black);
+    box-shadow: 0 0 1vh var(--color_red);
+}
+
+/* Custom Instructions Section */
+
+.config-section {
+    margin: 3vh 0;
+    padding: 2vh;
+    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.03);
+    border: 0.15vh solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
+    border-radius: 0.3vh;
+    animation: slideInUp 0.4s ease-out;
+}
+
+.section-header h3 {
+    margin: 0 0 1vh 0;
+    font-size: 2.5vh;
+    font-family: var(--font_mono);
+    color: rgb(var(--color_r), var(--color_g), var(--color_b));
+    text-transform: uppercase;
+    letter-spacing: 0.1vh;
+}
+
+.section-description {
+    margin: 0 0 2vh 0;
+    font-size: 1.6vh;
+    color: rgba(var(--color_r), var(--color_g), var(--color_b), 0.7);
+    font-family: var(--font_mono);
+}
+
+.field-hint {
+    margin-top: 0.8vh;
+    font-size: 1.4vh;
+    color: rgba(var(--color_r), var(--color_g), var(--color_b), 0.6);
+    font-family: var(--font_mono);
+    font-style: italic;
+}
+
+/* Animations */
+
+@keyframes glowPulse {
+    0%, 100% { 
+        text-shadow: 0 0 0.5vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.6);
+    }
+    50% { 
+        text-shadow: 0 0 1.5vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.8);
+    }
+}
+
+@keyframes slideInLeft {
+    from { 
+        transform: translateX(-3vh);
+        opacity: 0;
+    }
+    to { 
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    from { 
+        transform: translateX(3vh);
+        opacity: 0;
+    }
+    to { 
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInUp {
+    from { 
+        transform: translateY(3vh);
+        opacity: 0;
+    }
+    to { 
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes scaleIn {
+    from { 
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to { 
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 /* Responsive Design */
@@ -723,5 +1017,9 @@ details#shortcutsHelpAccordeon2 table td:nth-child(3) input[type="checkbox"] {
     .footer-buttons {
         flex-direction: column;
         gap: 1vh;
+    }
+    
+    .profile-management-container {
+        flex-direction: column;
     }
 }

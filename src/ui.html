@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>eDEX Chatbot</title>
+        <title>[BIG DATA]</title>
 
         <!-- Load main css -->
         <link rel="stylesheet" href="assets/css/main.css" />
@@ -18,13 +18,53 @@
         <!-- Load custom chat css -->
         <link rel="stylesheet" href="assets/css/terminal.css" />
         <link rel="stylesheet" href="assets/css/chat.css" />
+        <link rel="stylesheet" href="assets/css/chat_sci_fi.css" />
         <link rel="stylesheet" href="assets/css/chatbot_layout.css" />
         <link rel="stylesheet" href="assets/css/modal.css" />
+        <link rel="stylesheet" href="assets/css/settings-edex.css" />
 
         <!-- Load classes -->
-        <script src="classes/chat.class.js"></script>
-        <script src="classes/session.class.js"></script>
-        <script src="utils/markdown.js"></script>
+        <script type="module" src="classes/chat.class.js"></script>
+        <script type="module" src="classes/session.class.js"></script>
+        <script type="module" src="classes/widget.class.js"></script>
+        <script type="module" src="classes/sysinfo.widget.js"></script>
+        <script type="module" src="classes/processlist.widget.js"></script>
+        <script type="module" src="classes/widgetmanager.class.js"></script>
+        <script type="module" src="classes/collaboration.class.js"></script>
+        <!-- Load React and ReactDOM locally -->
+        <script crossorigin src="../lib/react.production.min.js"></script>
+        <script crossorigin src="../lib/react-dom.production.min.js"></script>
+        <!-- Prism.js for syntax highlighting (loaded globally for fallback mode) -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+        <script type="module" src="utils/markdown.js"></script>
+        <script type="module" src="renderer.js"></script>
+        
+        <!-- Debug script to check React loading -->
+        <script>
+            function checkReactLoading() {
+                console.log("=== React Loading Check ===");
+                console.log("React available:", typeof React !== 'undefined');
+                console.log("ReactDOM available:", typeof ReactDOM !== 'undefined');
+                console.log("window.React:", typeof window.React);
+                console.log("window.ReactDOM:", typeof window.ReactDOM);
+                console.log("==========================");
+            }
+            
+            // Check immediately
+            setTimeout(checkReactLoading, 1000);
+            
+            // Check after a delay
+            setTimeout(checkReactLoading, 3000);
+        </script>
     </head>
     <body class="solidBackground">
         <section id="boot_screen">
@@ -72,16 +112,6 @@
                             </div>
                             <div class="session_controls">
                                 <button id="new_chat_btn" class="neon_button session_control_btn">+ NEW CHAT</button>
-                                <div class="persona_selector_container">
-                                    <span class="control_label">PROFILE:</span>
-                                    <select id="persona_selector" class="neon_selector">
-                                        <option value="default">DEFAULT</option>
-                                        <option value="creative">CREATIVE</option>
-                                        <option value="analytical">ANALYTICAL</option>
-                                        <option value="helpful">HELPFUL</option>
-                                        <option value="technical">TECHNICAL</option>
-                                    </select>
-                                </div>
                             </div>
                         </div>
                         <div class="sessions_container">
@@ -132,47 +162,156 @@
 
                 <!-- System Panels -->
                 <aside id="system_panels">
-                    <section class="system_panel">
-                        
-                        <div class="panel_content">
-                            <div class="stat_item">
-                                <span class="stat_label">API LATENCY:</span>
-                                <span class="stat_value" id="api_latency">--ms</span>
-                            </div>
-                            <div class="stat_item">
-                                <span class="stat_label">TOKENS:</span>
-                                <span class="stat_value" id="token_count">0</span>
-                            </div>
-                        </div>
-                    </section>
-                    
-                    <section class="system_panel">
-                       
-                        <div class="panel_content">
-                            <div class="stat_item">
-                                <span class="stat_label">SESSIONS:</span>
-                                <span class="stat_value" id="active_sessions">1</span>
-                            </div>
-                            <div class="stat_item">
-                                <span class="stat_label">UPTIME:</span>
-                                <span class="stat_value" id="uptime">00:00</span>
-                            </div>
-                        </div>
-                    </section>
+                    <!-- Widgets will be dynamically added here -->
                 </aside>
             </div>
 
             <!-- Input Bar -->
+            <!--
             <footer id="input_bar">
                 <div class="input_status">
                     <span id="input_status_text">Ready for input - Press Enter to send, Shift+Enter for new line</span>
                 </div>
                 <div class="input_container">
                     <div class="slash-suggestions" id="slash_suggestions" style="display: none;"></div>
+                    <div class="file-upload-container">
+                        <input type="file" id="file_input" accept=".txt,.md,.pdf,image/*" style="display: none;" multiple>
+                        <button id="file_upload_btn" class="neon_button" title="Upload files (TXT, MD, PDF)">📎</button>
+                        <div id="file_preview" class="file-preview"></div>
+                    </div>
                     <textarea id="chat_input" placeholder="Enter your message or type / for commands..." rows="1"></textarea>
                     <button id="send_button" class="neon_button">SEND</button>
+                    <button id="cancel_streaming_button" class="neon_button" style="display: none;">CANCEL</button>
                 </div>
             </footer>
+            -->
+
+            <!-- Floating Input Dock -->
+            <div id="input_dock">
+                <div class="input_container">
+                    <div class="slash-suggestions" id="slash_suggestions" style="display: none;"></div>
+                    <div class="file-upload-container">
+                        <input type="file" id="file_input" accept=".txt,.md,.pdf,image/*" style="display: none;" multiple>
+                        <button id="file_upload_btn" class="neon_button" title="Upload files (TXT, MD, PDF)">📎</button>
+                        <div id="file_preview" class="file-preview"></div>
+                    </div>
+                    <textarea id="chat_input" placeholder="Type your message or /command..." rows="1"></textarea>
+                    <button id="send_button" class="neon_button send-button">➤</button>
+                    <button id="cancel_streaming_button" class="neon_button cancel-button" style="display: none;">CANCEL</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Management Modal -->
+        <div id="profile_management_modal" class="modal-overlay" style="display: none;">
+            <div class="modal-container">
+                <!-- Header -->
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <h2><span class="modal-icon">👤</span> PROFILE MANAGEMENT</h2>
+                        <p class="modal-subtitle">Create and manage chatbot personalities</p>
+                    </div>
+                    <button class="modal-close" id="profile_modal_close"><span class="icon-close">✕</span></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="profile-management-container">
+                        <!-- Profile List -->
+                        <div class="profile-list-container">
+                            <div class="profile-list-header">
+                                <h3>Profiles</h3>
+                                <button id="new_profile_btn" class="neon_button">+ NEW PROFILE</button>
+                            </div>
+                            <div id="profile_list" class="profile-list">
+                                <!-- Profiles will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Profile Editor -->
+                        <div class="profile-editor-container">
+                            <h3 id="profile_editor_title">Create New Profile</h3>
+                            <form id="profile_form">
+                                <input type="hidden" id="profile_id">
+                                
+                                <div class="form-group">
+                                    <label for="profile_name"><span class="field-icon">📝</span> Name</label>
+                                    <input type="text" id="profile_name" class="form-input" placeholder="Profile name" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="profile_description"><span class="field-icon">📄</span> Description</label>
+                                    <textarea id="profile_description" class="form-input" placeholder="Profile description"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="profile_personality"><span class="field-icon">🧠</span> Personality</label>
+                                    <textarea id="profile_personality" class="form-input" placeholder="Describe the personality traits of this profile"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="profile_system_prompt"><span class="field-icon">💬</span> System Prompt</label>
+                                    <textarea id="profile_system_prompt" class="form-input" placeholder="Custom system prompt for this profile"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="profile_avatar"><span class="field-icon">🖼</span> Avatar</label>
+                                    <input type="text" id="profile_avatar" class="form-input" placeholder="Avatar URL, emoji, or text">
+                                    <div class="avatar-preview-container" id="avatar_preview_container" style="display: none;">
+                                        <div class="avatar-preview" id="avatar_preview"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="profile_provider"><span class="field-icon">⚙</span> Provider</label>
+                                    <select id="profile_provider" class="form-select">
+                                        <option value="openai">OpenAI</option>
+                                        <option value="anthropic">Anthropic</option>
+                                        <option value="google">Google Gemini</option>
+                                        <option value="mistral">Mistral</option>
+                                        <option value="groq">Groq</option>
+                                        <option value="xai">xAI</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="profile_model"><span class="field-icon">🎛</span> Model</label>
+                                    <select id="profile_model" class="form-select">
+                                        <option value="gpt-4o-mini">GPT-4o Mini</option>
+                                        <option value="gpt-4o">GPT-4o</option>
+                                        <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                                        <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                                        <option value="llama3-70b-8192">Llama 3 70B (Groq)</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="profile_temperature"><span class="field-icon">🌡</span> Temperature: <span id="profile_temp_value">0.7</span></label>
+                                    <input type="range" id="profile_temperature" min="0" max="1" step="0.1" value="0.7" class="form-slider">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="profile_max_tokens"><span class="field-icon">💾</span> Max Tokens</label>
+                                    <input type="number" id="profile_max_tokens" min="256" max="32000" value="2048" class="form-input">
+                                </div>
+                                
+                                <div class="form-group checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="profile_is_default" class="form-checkbox">
+                                        <span class="checkmark"></span>
+                                        Set as default profile
+                                    </label>
+                                </div>
+                                
+                                <div class="form-actions">
+                                    <button type="button" id="profile_cancel_btn" class="modal-button cancel">CANCEL</button>
+                                    <button type="button" id="profile_delete_btn" class="modal-button delete" style="display: none;">DELETE</button>
+                                    <button type="submit" id="profile_save_btn" class="modal-button save">SAVE PROFILE</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- API Settings Modal -->
@@ -413,24 +552,246 @@
                                 </select>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Footer -->
-                <div class="modal-footer">
-                    <div class="status-display" id="connection_status">
-                        <span class="status-text">[SYSTEM] Awaiting configuration...</span>
+                        <!-- Custom Instructions Section -->
+                        <div class="config-section">
+                            <div class="section-header">
+                                <h3>Custom Instructions</h3>
+                                <p class="section-description">Set custom instructions and system prompts for the chatbot</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="base_system_prompt"><span class="field-icon">🧠</span> Base System Prompt</label>
+                                <textarea id="base_system_prompt" class="form-input" placeholder="Enter the base system prompt that defines the chatbot's behavior and personality..."></textarea>
+                                <div class="field-hint">This is the foundational prompt that establishes the chatbot's core behavior and personality.</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="user_custom_instructions"><span class="field-icon">✍️</span> User Custom Instructions</label>
+                                <textarea id="user_custom_instructions" class="form-input" placeholder="Enter any additional custom instructions you want to append to the system prompt..."></textarea>
+                                <div class="field-hint">These instructions will be appended to the base system prompt for all conversations.</div>
+                            </div>
+                        </div>
+
+                        <!-- Tools Section -->
+                        <div class="config-section">
+                            <div class="section-header">
+                                <h3>Tools & Functions</h3>
+                                <p class="section-description">Configure tools and functions that the chatbot can use</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="enable_tools"><span class="field-icon">🔧</span> Enable Tools</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="enable_tools" class="form-checkbox">
+                                        <span class="checkmark"></span>
+                                        Allow chatbot to use tools and functions
+                                    </label>
+                                </div>
+                                <div class="field-hint">When enabled, the chatbot can automatically use tools to perform actions like weather lookup, calculations, and web searches.</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="tools_list"><span class="field-icon">📋</span> Available Tools</label>
+                                <div id="tools_list" class="tools-list">
+                                    <!-- Tools will be populated here -->
+                                    <div class="tool-item">
+                                        <div class="tool-info">
+                                            <div class="tool-name">get_weather</div>
+                                            <div class="tool-description">Get current weather information for a location</div>
+                                        </div>
+                                        <div class="tool-actions">
+                                            <button class="neon_button tool-edit">EDIT</button>
+                                            <button class="neon_button tool-delete">DELETE</button>
+                                        </div>
+                                    </div>
+                                    <div class="tool-item">
+                                        <div class="tool-info">
+                                            <div class="tool-name">calculate</div>
+                                            <div class="tool-description">Perform mathematical calculations</div>
+                                        </div>
+                                        <div class="tool-actions">
+                                            <button class="neon_button tool-edit">EDIT</button>
+                                            <button class="neon_button tool-delete">DELETE</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button id="add_tool_btn" class="neon_button" style="margin-top: 10px;">+ ADD NEW TOOL</button>
+                            </div>
+                        </div>
+
+                        <!-- Widgets Section -->
+                        <div class="config-section">
+                            <div class="section-header">
+                                <h3>System Widgets</h3>
+                                <p class="section-description">Configure system monitoring widgets</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><span class="field-icon">🖥</span> Available Widgets</label>
+                                <div id="widgets_list" class="widgets-list">
+                                    <!-- Widgets will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Accessibility Section -->
+                        <div class="config-section">
+                            <div class="section-header">
+                                <h3>Accessibility</h3>
+                                <p class="section-description">Configure accessibility options</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="high_contrast_mode"><span class="field-icon">👁</span> High Contrast Mode</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="high_contrast_mode" class="form-checkbox">
+                                        <span class="checkmark"></span>
+                                        Enable high contrast mode for better visibility
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="focus_indicators"><span class="field-icon">🎯</span> Enhanced Focus Indicators</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="focus_indicators" class="form-checkbox" checked>
+                                        <span class="checkmark"></span>
+                                        Show enhanced focus indicators for keyboard navigation
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="footer-buttons">
-                        <button class="modal-button cancel" id="api_modal_cancel"><span class="button-icon">✖</span> CANCEL</button>
-                        <button class="modal-button test" id="api_test_connection"><span class="button-icon">⚡</span> TEST CONNECTION</button>
-                        <button class="modal-button save" id="api_save_settings"><span class="button-icon">✓</span> SAVE</button>
+
+                    <!-- Footer -->
+                    <div class="modal-footer">
+                        <div class="status-display" id="connection_status">
+                            <span class="status-text">[SYSTEM] Awaiting configuration...</span>
+                        </div>
+                        <div class="footer-buttons">
+                            <button class="modal-button cancel" id="api_modal_cancel"><span class="button-icon">✖</span> CANCEL</button>
+                            <button class="modal-button test" id="api_test_connection"><span class="button-icon">⚡</span> TEST CONNECTION</button>
+                            <button class="modal-button save" id="api_save_settings"><span class="button-icon">✓</span> SAVE</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- Tools Management Modal -->
+        <div id="tools_management_modal" class="modal-overlay" style="display: none;">
+            <div class="modal-container">
+                <!-- Header -->
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <h2><span class="modal-icon">🔧</span> TOOLS MANAGEMENT</h2>
+                        <p class="modal-subtitle">Create and manage tools for the chatbot</p>
+                    </div>
+                    <button class="modal-close" id="tools_modal_close"><span class="icon-close">✕</span></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="profile-management-container">
+                        <!-- Tools List -->
+                        <div class="profile-list-container">
+                            <div class="profile-list-header">
+                                <h3>Tools</h3>
+                                <button id="new_tool_btn" class="neon_button">+ NEW TOOL</button>
+                            </div>
+                            <div id="tools_list_container" class="profile-list">
+                                <!-- Tools will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Tool Editor -->
+                        <div class="profile-editor-container">
+                            <h3 id="tool_editor_title">Create New Tool</h3>
+                            <form id="tool_form">
+                                <input type="hidden" id="tool_id">
+                                
+                                <div class="form-group">
+                                    <label for="tool_name"><span class="field-icon">📝</span> Name</label>
+                                    <input type="text" id="tool_name" class="form-input" placeholder="Tool name" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="tool_description"><span class="field-icon">📄</span> Description</label>
+                                    <textarea id="tool_description" class="form-input" placeholder="Tool description"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="tool_content"><span class="field-icon">💻</span> Code</label>
+                                    <textarea id="tool_content" class="form-input" placeholder="Tool implementation code" style="height: 200px;"></textarea>
+                                    <div class="field-hint">Write the tool implementation in Python. The function should accept parameters and return a result.</div>
+                                </div>
+                                
+                                <div class="form-actions">
+                                    <button type="button" id="tool_cancel_btn" class="modal-button cancel">CANCEL</button>
+                                    <button type="button" id="tool_delete_btn" class="modal-button delete" style="display: none;">DELETE</button>
+                                    <button type="submit" id="tool_save_btn" class="modal-button save">SAVE TOOL</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demo section (hidden by default) -->
+        <div id="demo_section" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); padding: 20px; border-radius: 10px; z-index: 1000;">
+            <h3>Demo Controls</h3>
+            <button id="demo-btn" class="neon_button">Test Demo</button>
+            <button id="notification-btn" class="neon_button">Test Notification</button>
+            <div id="message" class="message" style="margin-top: 10px;"></div>
+            <div style="margin-top: 10px;">
+                <span>Electron: <span id="electron-version">Loading...</span></span><br>
+                <span>Node: <span id="node-version">Loading...</span></span><br>
+                <span>Chrome: <span id="chrome-version">Loading...</span></span>
+            </div>
+            <button onclick="document.getElementById('demo_section').style.display='none'" style="margin-top: 10px;">Close</button>
+        </div>
+
         <!-- Renderer script -->
-        <script src="_renderer.js"></script>
+        <script type="module" src="../renderer.js"></script>
+        
+        <!-- Debug script to check React loading -->
+        <script>
+            function checkReactLoading() {
+                console.log("=== React Loading Check ===");
+                console.log("React available:", typeof React !== 'undefined');
+                console.log("ReactDOM available:", typeof ReactDOM !== 'undefined');
+                console.log("window.React:", typeof window.React);
+                console.log("window.ReactDOM:", typeof window.ReactDOM);
+                console.log("==========================");
+            }
+            
+            // Check immediately
+            setTimeout(checkReactLoading, 1000);
+            
+            // Check after a delay
+            setTimeout(checkReactLoading, 3000);
+        </script>
+        
+        <!-- Load SettingsBridge after all other scripts -->
+        <script src="components/SettingsBridge.js"></script>
+        
+        <!-- Initialize SettingsBridge after all scripts are loaded -->
+        <script>
+            // Wait for all scripts to load before initializing SettingsBridge
+            window.addEventListener('load', function() {
+                console.log('Window loaded, initializing SettingsBridge');
+                setTimeout(() => {
+                    if (window.SettingsBridge) {
+                        window.SettingsBridge.init();
+                    } else {
+                        console.error('SettingsBridge not found');
+                    }
+                }, 1000);
+            });
+        </script>
     </body>
 </html>

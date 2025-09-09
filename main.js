@@ -1,11 +1,11 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const bodyParser = require('body-parser');
-const { RateLimiterMemory } = require('rate-limiter-flexible');
-require('dotenv').config();
+const fs = require('fs');
+
+// Handle creating/removing shortcuts on Windows when installing/uninstalling.
+if (require('electron-squirrel-startup')) {
+  app.quit();
+}
 
 // Import backend routes
 const providerRoutes = require('./src/backend/routes/providers');
@@ -13,156 +13,269 @@ const chatRoutes = require('./src/backend/routes/chat');
 const configRoutes = require('./src/backend/routes/config');
 const tagsRoutes = require('./src/backend/routes/tags');
 const foldersRoutes = require('./src/backend/routes/folders');
+const profilesRoutes = require('./src/backend/routes/profiles');
+const toolsRoutes = require('./src/backend/routes/tools');
+const preferencesRoutes = require('./src/backend/routes/preferences');
 
 // Database initialization
-const { initializeDatabase } = require('./src/backend/utils/database');
+let initializeDatabaseFn;
+try {
+  const { initializeDatabase } = require('./src/backend/utils/database');
+  initializeDatabaseFn = initializeDatabase;
+} catch (error) {
+  console.warn('⚠️ Database initialization module not available:', error);
+  initializeDatabaseFn = () => Promise.resolve();
+}
 
 // Keep a global reference of the window object
 let mainWindow;
 let backendServer;
 
+// IPC handlers for renderer process
+ipcMain.handle('get-app-path', () => app.getAppPath());
+ipcMain.handle('get-user-data-path', () => app.getPath('userData'));
+ipcMain.handle('get-path', (event, name) => app.getPath(name));
+ipcMain.handle('focus-app', () => {
+  if (mainWindow) mainWindow.focus();
+});
+ipcMain.handle('quit-app', () => app.quit());
+ipcMain.handle('get-theme-override', () => null); // Default implementation
+ipcMain.handle('get-kb-override', () => null); // Default implementation
+ipcMain.handle('read-file', (event, filePath) => {
+  try {
+    return fs.readFileSync(filePath, 'utf8');
+  } catch (error) {
+    throw error;
+  }
+});
+ipcMain.handle('write-file', (event, filePath, data) => {
+  try {
+    fs.writeFileSync(filePath, data, 'utf8');
+    return true;
+  } catch (error) {
+    throw error;
+  }
+});
+ipcMain.handle('file-exists', (event, filePath) => fs.existsSync(filePath));
+
+// get-versions handler moved to app.whenReady() for early registration
+
+// Logging handler
+ipcMain.on('log', (event, level, message) => {
+  console.log(`[${level.toUpperCase()}] ${message}`);
+});
+
+// System information proxy handler
+ipcMain.on('systeminformation-call', (event, prop, id, ...args) => {
+  // This would need to be implemented based on your system information needs
+  // For now, we'll send back a placeholder response
+  event.reply(`systeminformation-reply-${id}`, null);
+});
+
+// Audio playback handler
+ipcMain.on('play-audio', (event, sound) => {
+  // This would need to be implemented based on your audio needs
+  console.log(`Playing audio: ${sound}`);
+});
+
 // Backend server setup
 function startBackendServer() {
-  const expressApp = express();
-  const PORT = process.env.PORT || 3001;
+  try {
+    const express = require('express');
+    const cors = require('cors');
+    const helmet = require('helmet');
+    const bodyParser = require('body-parser');
+    const { RateLimiterMemory } = require('rate-limiter-flexible');
+    require('dotenv').config();
+    
+    const expressApp = express();
+    const PORT = process.env.PORT || 3001;
 
-  // Security middleware
-  expressApp.use(helmet());
+    // Security middleware
+    expressApp.use(helmet());
 
-  // Rate limiting
-  const rateLimiter = new RateLimiterMemory({
-    keyGenerator: (req) => req.ip,
-    points: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 30,
-    duration: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60000,
-  });
+    // Rate limiting
+    const rateLimiter = new RateLimiterMemory({
+      keyGenerator: (req) => req.ip,
+      points: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 30,
+      duration: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60000,
+    });
 
-  const rateLimitMiddleware = (req, res, next) => {
-    rateLimiter.consume(req.ip)
-      .then(() => {
-        next();
-      })
-      .catch(() => {
-        res.status(429).json({
-          error: 'Too many requests',
-          message: 'Please slow down your requests'
+    const rateLimitMiddleware = (req, res, next) => {
+      rateLimiter.consume(req.ip)
+        .then(() => {
+          next();
+        })
+        .catch(() => {
+          res.status(429).json({
+            error: 'Too many requests',
+            message: 'Please slow down your requests'
+          });
         });
+    };
+
+    // CORS configuration - Allow Electron renderer
+    expressApp.use(cors({
+      origin: ['http://localhost:5000', 'file://', 'app://'],
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+      credentials: true
+    }));
+
+    // Body parsing middleware
+    expressApp.use(bodyParser.json({ limit: '10mb' }));
+    expressApp.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+
+    // Apply rate limiting to API routes
+    expressApp.use('/api/', rateLimitMiddleware);
+
+    // Routes
+    expressApp.use('/api/providers', providerRoutes);
+    expressApp.use('/api/chat', chatRoutes);
+    expressApp.use('/api/config', configRoutes);
+    expressApp.use('/api/tags', tagsRoutes);
+    expressApp.use('/api/folders', foldersRoutes);
+    expressApp.use('/api/profiles', profilesRoutes);
+    expressApp.use('/api/tools', toolsRoutes);
+    expressApp.use('/api/preferences', preferencesRoutes);
+
+    // Health check endpoint
+    expressApp.get('/health', (req, res) => {
+      res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0',
+        uptime: process.uptime()
       });
-  };
-
-  // CORS configuration - Allow Electron renderer
-  expressApp.use(cors({
-    origin: ['http://localhost:5000', 'file://', 'app://'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    credentials: true
-  }));
-
-  // Body parsing middleware
-  expressApp.use(bodyParser.json({ limit: '10mb' }));
-  expressApp.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
-
-  // Apply rate limiting to API routes
-  expressApp.use('/api/', rateLimitMiddleware);
-
-  // Routes
-  expressApp.use('/api/providers', providerRoutes);
-  expressApp.use('/api/chat', chatRoutes);
-  expressApp.use('/api/config', configRoutes);
-  expressApp.use('/api/tags', tagsRoutes);
-  expressApp.use('/api/folders', foldersRoutes);
-
-  // Health check endpoint
-  expressApp.get('/health', (req, res) => {
-    res.json({
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      version: '1.0.0',
-      uptime: process.uptime()
     });
-  });
 
-  // Root endpoint
-  expressApp.get('/', (req, res) => {
-    res.json({
-      name: 'eDEX Chatbot Backend',
-      version: '1.0.0',
-      description: 'Backend server for eDEX-UI style chatbot with multiple LLM providers',
-      endpoints: {
-        health: '/health',
-        providers: '/api/providers',
-        chat: '/api/chat',
-        config: '/api/config',
-        tags: '/api/tags',
-        folders: '/api/folders'
-      }
+    // Root endpoint
+    expressApp.get('/', (req, res) => {
+      res.json({
+        name: 'eDEX Chatbot Backend',
+        version: '1.0.0',
+        description: 'Backend server for eDEX-UI style chatbot with multiple LLM providers',
+        endpoints: {
+          health: '/health',
+          providers: '/api/providers',
+          chat: '/api/chat',
+          config: '/api/config',
+          tags: '/api/tags',
+          folders: '/api/folders',
+          profiles: '/api/profiles',
+          tools: '/api/tools',
+          preferences: '/api/preferences'
+        }
+      });
     });
-  });
 
-  // Error handling middleware
-  expressApp.use((err, req, res, next) => {
-    console.error('Error:', err);
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+    // Error handling middleware
+    expressApp.use((err, req, res, next) => {
+      console.error('Error:', err);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+      });
     });
-  });
 
-  // 404 handler
-  expressApp.use('*', (req, res) => {
-    res.status(404).json({
-      error: 'Not Found',
-      message: `Route ${req.originalUrl} not found`
+    // 404 handler
+    expressApp.use((req, res) => {
+      res.status(404).json({
+        error: 'Not Found',
+        message: `Route ${req.originalUrl} not found`
+      });
     });
-  });
 
-  // Initialize database
-  initializeDatabase().then(() => {
-    console.log('✅ Database initialized');
-  }).catch((error) => {
-    console.error('❌ Database initialization failed:', error);
-  });
-  
-  // Start server
-  backendServer = expressApp.listen(PORT, 'localhost', () => {
-    console.log(`🚀 eDEX Backend Server running on http://localhost:${PORT}`);
-  });
+    // Initialize database
+    initializeDatabaseFn().then(() => {
+      console.log('✅ Database initialized');
+    }).catch((error) => {
+      console.error('❌ Database initialization failed:', error);
+    });
+    
+    // Start server
+    backendServer = expressApp.listen(PORT, 'localhost', () => {
+      console.log(`🚀 eDEX Backend Server running on http://localhost:${PORT}`);
+    });
 
-  return backendServer;
+    // Handle server errors
+    backendServer.on('error', (error) => {
+      console.error('❌ Backend server error:', error);
+    });
+
+    return backendServer;
+  } catch (error) {
+    console.error('❌ Failed to start backend server:', error);
+    return null;
+  }
 }
 
 function createWindow() {
   console.log('🔧 Creating Electron window...');
   
   // Start backend server first
-  startBackendServer();
+  try {
+    const server = startBackendServer();
+    if (!server) {
+      console.error('❌ Failed to start backend server');
+    }
+  } catch (error) {
+    console.error('❌ Error starting backend server:', error);
+  }
 
   // Create the browser window
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      webSecurity: false // Allow local file access
+      preload: path.join(__dirname, 'src/preload.js'),
+      nodeIntegration: false, // Disable nodeIntegration for security
+      contextIsolation: true, // Enable context isolation
+      webSecurity: true, // Enable web security
+      allowRunningInsecureContent: false, // Disable insecure content
+      // Set Content Security Policy
+      additionalArguments: [
+        "--disable-web-security" // Only for development
+      ]
     },
     icon: path.join(__dirname, 'assets/icon.png'), // Optional: add an icon
     frame: true,
     titleBarStyle: 'default'
   });
 
-  console.log('📁 Loading UI file...');
-  // Load the DEX UI
-  mainWindow.loadFile('src/ui.html');
+  // Set Content Security Policy for the window
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data:; font-src 'self' data: https://cdnjs.cloudflare.com; connect-src 'self' http://localhost:3001 ws://localhost:3000;"
+        ]
+      }
+    });
+  });
 
-  // Disable devtools in production, enable in development
+  // Load the UI directly from source file (no vite dependency)
+  console.log('📁 Loading source HTML file...');
+  const uiPath = path.join(__dirname, 'src/ui.html');
+  mainWindow.loadFile(uiPath).catch((error) => {
+    console.error('Failed to load source HTML:', error);
+  });
+  
+  // Open DevTools in development
   if (process.env.NODE_ENV === 'development') {
     mainWindow.webContents.openDevTools();
-  } else {
-    // Disable devtools context menu in production
-    mainWindow.webContents.on('devtools-opened', () => {
-      mainWindow.webContents.closeDevTools();
-    });
   }
+
+  // Prevent navigation
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    event.preventDefault();
+  });
+
+  // Prevent new windows
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    return { action: 'deny' };
+  });
 
   // Emitted when the window is closed
   mainWindow.on('closed', () => {
@@ -172,15 +285,25 @@ function createWindow() {
     // Close backend server
     if (backendServer) {
       backendServer.close();
+      console.log('🛑 Backend server stopped');
     }
   });
   
   console.log('✅ Window created successfully');
+  
+  return mainWindow;
 }
 
 // This method will be called when Electron has finished initialization
 app.whenReady().then(() => {
   console.log('⚡ Electron app is ready');
+  
+  // Register IPC handlers early to ensure they're available
+  ipcMain.handle('get-versions', () => {
+    console.log('📋 IPC handler: get-versions called');
+    return process.versions;
+  });
+  
   createWindow();
 
   app.on('activate', () => {
@@ -198,6 +321,7 @@ app.on('window-all-closed', () => {
   // Close backend server
   if (backendServer) {
     backendServer.close();
+    console.log('🛑 Backend server stopped');
   }
   // On macOS, keep the app running even when all windows are closed
   if (process.platform !== 'darwin') {
