@@ -1,63 +1,36 @@
 {
   "name": "edex-chatbot",
   "version": "1.0.0",
-  "description": "eDEX-UI style chatbot application",
   "main": "main.js",
+  "homepage": "./src/index.html",
   "scripts": {
     "start": "electron .",
+    "dev": "NODE_ENV=development electron .",
     "build": "electron-builder",
-    "postinstall": "electron-builder install-app-deps",
-    "rebuild": "electron-rebuild",
-    "install-deps": "npm install && npm run rebuild"
-  },
-  "devDependencies": {
-    "electron": "^21.0.0",
-    "electron-builder": "^24.13.3",
-    "electron-rebuild": "^3.2.9"
+    "dist": "electron-builder --publish=never",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "edex",
     "chatbot",
+    "edex-ui",
     "electron",
-    "ui"
+    "terminal"
   ],
-  "author": "eDEX Chatbot Team",
+  "author": "",
   "license": "MIT",
-  "build": {
-    "appId": "com.edex.chatbot",
-    "productName": "eDEX Chatbot",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "main.js",
-      "src/preload.js"
-    ],
-    "win": {
-      "target": "nsis"
-    },
-    "mac": {
-      "category": "public.app-category.utilities"
-    },
-    "linux": {
-      "target": "AppImage"
-    }
-  },
+  "description": "eDEX-UI style chatbot interface built with Electron",
   "dependencies": {
-    "@supabase/supabase-js": "^2.57.2",
-    "axios": "^1.11.0",
-    "body-parser": "^2.2.0",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.2",
-    "electron-squirrel-startup": "^1.0.1",
-    "express": "^5.1.0",
-    "helmet": "^8.1.0",
-    "prismjs": "^1.30.0",
-    "rate-limiter-flexible": "^7.3.0",
-    "sequelize": "^6.37.7",
-    "sqlite3": "^5.1.7",
-    "styled-components": "^6.1.19",
-    "uuid": "^8.3.2"
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/addon-webgl": "^0.18.0",
+    "@xterm/xterm": "^5.5.0",
+    "color": "^5.0.0",
+    "http-server": "^14.1.1",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0",
+    "xterm-addon-webgl": "^0.16.0"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0"
   }
 }
+

@@ -67,6 +67,49 @@ export async function initUI() {
         appContainer.style.display = "flex";
     }
     
+    // Check if we're using the modular UI approach
+    const isModularUI = document.getElementById('status_header') && 
+                       document.getElementById('status_header').innerHTML.trim() === '';
+    
+    if (isModularUI) {
+        // Use modular UI initialization
+        console.log("Initializing modular UI");
+        await initModularUI();
+    } else {
+        // Use traditional UI initialization
+        console.log("Initializing traditional UI");
+        await initTraditionalUI();
+    }
+}
+
+async function initModularUI() {
+    // Define the partials to load
+    const partials = [
+        { id: 'status_header', path: 'ui/partials/header.html' },
+        { id: 'sidebar', path: 'ui/partials/sidebar.html' },
+        { id: 'chat_main', path: 'ui/partials/chat_main.html' },
+        { id: 'input_dock', path: 'ui/partials/input_dock.html' }
+    ];
+
+    try {
+        // Load all partials
+        await window.partialLoader.loadAllPartials(partials);
+        console.log('Partials loaded successfully');
+        
+        // Initialize UI components after partials are loaded
+        await initUIComponents();
+        
+        // Set up event listeners for modals
+        setupModalListeners();
+        
+    } catch (error) {
+        console.error('Failed to initialize modular UI:', error);
+        // Fallback to traditional UI if dynamic loading fails
+        await initTraditionalUI();
+    }
+}
+
+async function initTraditionalUI() {
     // Initialize chat component
     try {
         window.chat = new Chat({
@@ -105,30 +148,110 @@ export async function initUI() {
     addExportButton();
     setupImportFunctionality();
     
-    // Initialize settings modal - handled by main renderer
-    // if (window.SettingsBridge) {
-    //     window.SettingsBridge.init();
-    // }
+    console.log("✅ Traditional UI initialization complete");
+}
+
+async function initUIComponents() {
+    console.log('Initializing UI components');
     
-    // Initialize settings trigger button - handled by SettingsBridge
-    // const settingsBtn = document.getElementById("settings_btn");
-    // if (settingsBtn) {
-    //     settingsBtn.addEventListener("click", () => {
-    //         if (window.SettingsBridge && window.SettingsBridge.openModal) {
-    //             window.SettingsBridge.openModal();
-    //         }
-    //     });
-    // }
+    // Initialize clock
+    startClock();
     
+    // Initialize theme toggle
+    initThemeToggle();
+    
+    // Initialize chat component
+    try {
+        window.chat = new Chat({
+            parentId: "chat_feed",
+            onmessage: handleChatMessage
+        });
+        
+        console.log("✅ Chat component initialized");
+    } catch (e) {
+        console.error("❌ Failed to initialize chat component:", e);
+        window.showToast("Failed to initialize chat component", "error");
+    }
+    
+    // Load chat history
+    loadChatHistory();
+    
+    // Load saved API settings
+    loadApiSettings();
+    
+    // Load default profile
+    await loadDefaultProfile();
+    
+    // Set up event listeners
+    setupEventListeners();
+    
+    // Check backend connection
+    checkBackendConnection();
+    
+    // Set up global keyboard navigation
     setupKeyboardNavigation();
     
-    console.log("✅ UI initialization complete");
+    // Add data management features
+    addExportButton();
+    setupImportFunctionality();
     
-    // Log if SettingsBridge is available
-    if (window.SettingsBridge) {
-        console.log("SettingsBridge is available");
-    } else {
-        console.log("SettingsBridge is NOT available");
+    console.log('UI components initialized');
+}
+
+function initThemeToggle() {
+    const themeToggle = document.getElementById("theme_toggle");
+    if (themeToggle) {
+        themeToggle.addEventListener("click", function() {
+            document.body.classList.toggle("dark-theme");
+            document.body.classList.toggle("light-theme");
+            
+            if (document.body.classList.contains("light-theme")) {
+                this.innerHTML = "☀️ Light";
+            } else {
+                this.innerHTML = "🌙 Dark";
+            }
+        });
+    }
+}
+
+function setupModalListeners() {
+    // Profile Management Modal
+    const profileBtn = document.getElementById("profile_btn");
+    if (profileBtn) {
+        profileBtn.addEventListener("click", async function() {
+            try {
+                await window.modalManager.showModal('profile_management_modal', 'ui/modals/profile_modal.html');
+            } catch (error) {
+                console.error('Failed to show profile modal:', error);
+                alert('Failed to open profile management. Please try again.');
+            }
+        });
+    }
+    
+    // API Settings Modal
+    const settingsBtn = document.getElementById("settings_btn");
+    if (settingsBtn) {
+        settingsBtn.addEventListener("click", async function() {
+            try {
+                await window.modalManager.showModal('api_settings_modal', 'ui/modals/api_modal.html');
+            } catch (error) {
+                console.error('Failed to show API settings modal:', error);
+                alert('Failed to open API settings. Please try again.');
+            }
+        });
+    }
+    
+    // Tools Management Modal
+    const toolsBtn = document.getElementById("tools_btn");
+    if (toolsBtn) {
+        toolsBtn.addEventListener("click", async function() {
+            try {
+                await window.modalManager.showModal('tools_management_modal', 'ui/modals/tools_modal.html');
+            } catch (error) {
+                console.error('Failed to show tools modal:', error);
+                alert('Failed to open tools management. Please try again.');
+            }
+        });
     }
 }
 
@@ -198,15 +321,6 @@ function handleChatMessage(event) {
         case 'stream_start':
             // Handle stream start
             console.log("Stream started");
-            // Show cancel button and hide send button
-            const cancelStreamingButton = document.getElementById("cancel_streaming_button");
-            const sendButton = document.getElementById("send_button");
-            if (cancelStreamingButton) {
-                cancelStreamingButton.style.display = "inline-block";
-            }
-            if (sendButton) {
-                sendButton.style.display = "none";
-            }
             break;
         case 'stream_end':
             // Handle stream end

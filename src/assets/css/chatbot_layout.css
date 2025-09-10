@@ -13,122 +13,9 @@
 }
 
 /* Responsive Design */
-@media (max-width: 1200px) {
-    #sidebar {
-        width: 22vh;
-    }
-    
-    #system_panels {
-        width: 18vh;
-    }
-    
-    .header_content {
-        padding: 0 1.5vh;
-        font-size: 1.1vh;
-    }
-    
-    .status_item {
-        gap: 0.4vh;
-    }
-}
-
-@media (max-width: 992px) {
-    #sidebar {
-        width: 20vh;
-    }
-    
-    #system_panels {
-        width: 16vh;
-    }
-    
-    .session_item {
-        padding: 1vh 1.2vh;
-    }
-    
-    .message_bubble {
-        padding: 1vh 1.5vh;
-        font-size: 1.3vh;
-    }
-}
-
 @media (max-width: 768px) {
     #app_container {
         flex-direction: column;
-    }
-    
-    #status_header {
-        height: 5vh;
-    }
-    
-    #status_header > h3.title {
-        top: -2.5vh;
-        width: 18vh;
-        font-size: 1.1vh;
-    }
-    
-    .header_content {
-        padding: 0 1vh;
-        font-size: 1vh;
-    }
-    
-    #main_layout {
-        flex-direction: column;
-        height: calc(100vh - 5vh - 12vh);
-    }
-    
-    #sidebar {
-        position: fixed;
-        top: 5vh;
-        left: 0;
-        width: 80vw;
-        height: calc(100vh - 5vh - 12vh);
-        z-index: 2000;
-        transform: translateX(-100%);
-        background: rgba(var(--color_light_black), 0.95);
-        backdrop-filter: blur(10px);
-        border-right: 0.09vh solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
-    }
-    
-    #sidebar.mobile-open {
-        transform: translateX(0);
-    }
-    
-    #chat_main {
-        border-right: none;
-        border-bottom: 0.09vh solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
-    }
-    
-    #system_panels {
-        width: 100%;
-        flex-direction: row;
-        gap: 1vh;
-        height: auto;
-        min-height: 12vh;
-        padding: 0 1vh 1vh 1vh;
-    }
-    
-    .system_panel {
-        flex: 1;
-        min-height: 12vh;
-    }
-    
-    .sessions_header {
-        gap: 1vh;
-        margin-bottom: 1.5vh;
-    }
-    
-    .session_control_btn {
-        padding: 0.8vh;
-        font-size: 0.9vh;
-    }
-    
-    .control_label {
-        font-size: 0.8vh;
-    }
-    
-    .neon_selector {
-        font-size: 0.8vh;
-        padding: 0.4vh;
     }
 }
 
@@ -136,81 +23,6 @@
     :root {
         font-size: 14px;
     }
-    
-    #status_header {
-        height: 6vh;
-    }
-    
-    #status_header > h3.title {
-        top: -3vh;
-        width: 20vh;
-        font-size: 1vh;
-    }
-    
-    .header_content {
-        font-size: 0.9vh;
-    }
-    
-    #main_layout {
-        height: calc(100vh - 6vh - 14vh);
-    }
-    
-    #sidebar {
-        top: 6vh;
-        height: calc(100vh - 6vh - 14vh);
-    }
-    
-    #system_panels {
-        min-height: 14vh;
-        padding: 0 0.5vh 0.5vh 0.5vh;
-    }
-    
-    .system_panel {
-        min-height: 14vh;
-    }
-    
-    .panel_content {
-        padding: 1.5vh 1vh;
-        font-size: 0.9vh;
-    }
-    
-    .stat_item {
-        margin: 0.8vh 0;
-        padding: 0.6vh;
-    }
-    
-    .stat_label {
-        font-size: 1vh;
-    }
-    
-    .stat_value {
-        font-size: 1.1vh;
-    }
-    
-    /*
-    #input_bar {
-        min-height: 12vh;
-        padding: 0.8vh 1vh;
-    }
-    
-    .input_status {
-        font-size: 0.9vh;
-        margin-bottom: 0.6vh;
-        padding: 0.4vh 0.8vh;
-    }
-    
-    #chat_input {
-        padding: 1vh;
-        font-size: 1.2vh;
-        min-height: 3.5vh;
-    }
-    
-    #send_button {
-        padding: 1vh 2vh;
-        min-height: 4.5vh;
-        font-size: 1.1vh;
-    }
-    */
 }
 
 /* Status Header */
@@ -262,51 +74,6 @@
     font-weight: bold;
 }
 
-/* Status Value Select Styles */
-.status_value {
-    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.15);
-    border: 0.05vh solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.5);
-    color: rgb(var(--color_r), var(--color_g), var(--color_b));
-    font-family: var(--font_mono), monospace;
-    font-size: 1.2vh;
-    padding: 0.5vh;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border-radius: 0.2vh;
-    box-shadow: 0 0 0.3vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.2);
-}
-
-.status_value:focus {
-    outline: none;
-    border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
-    box-shadow: 0 0 0.5vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.6);
-    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.2);
-}
-
-.status_value:hover {
-    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.2);
-    border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
-    box-shadow: 0 0 0.5vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.4);
-}
-
-.status_value:active {
-    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.25);
-    border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
-    box-shadow: 0 0 0.7vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.5);
-    transform: scale(0.98);
-}
-
-.status_value:focus {
-    outline: none;
-    border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
-    box-shadow: 0 0 0.5vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.4);
-}
-
-.status_value:hover {
-    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.15);
-    border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
-}
-
 /* Main Layout */
 #main_layout {
     flex: 1;
@@ -323,6 +90,47 @@
     flex-direction: column;
     position: relative;
     transition: transform 0.3s ease, width 0.3s ease;
+}
+
+/* Mobile sidebar toggle */
+@media (max-width: 768px) {
+    #sidebar {
+        position: fixed;
+        top: 4.5vh;
+        left: 0;
+        width: 80vw;
+        height: calc(100vh - 4.5vh - 8vh);
+        z-index: 2000;
+        transform: translateX(-100%);
+        background: rgba(var(--color_light_black), 0.95);
+        backdrop-filter: blur(10px);
+    }
+    
+    #sidebar.mobile-open {
+        transform: translateX(0);
+    }
+    
+    #main_layout {
+        flex-direction: column;
+    }
+    
+    #chat_main {
+        border-right: none;
+        border-bottom: 0.09vh solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
+    }
+    
+    #system_panels {
+        width: 100%;
+        flex-direction: row;
+        gap: 1vh;
+        height: auto;
+        min-height: 12vh;
+    }
+    
+    .system_panel {
+        flex: 1;
+        min-height: 12vh;
+    }
 }
 
 #sidebar > h3.title {
@@ -387,7 +195,6 @@
     padding: 1vh;
 }
 
-/*
 .persona_selector_container {
     display: flex;
     align-items: center;
@@ -406,8 +213,8 @@
 }
 
 .neon_selector {
-    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.15);
-    border: 0.05vh solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.5);
+    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.1);
+    border: 0.05vh solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.4);
     color: rgb(var(--color_r), var(--color_g), var(--color_b));
     font-family: var(--font_mono), monospace;
     font-size: 0.9vh;
@@ -416,45 +223,6 @@
     transition: all 0.2s ease;
     flex: 1;
     text-transform: uppercase;
-    border-radius: 0.2vh;
-    box-shadow: 0 0 0.3vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.2);
-}
-
-.neon_selector:focus {
-    outline: none;
-    border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
-    box-shadow: 0 0 0.5vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.6);
-    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.2);
-}
-
-.neon_selector:hover {
-    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.2);
-    border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
-    box-shadow: 0 0 0.5vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.4);
-    transform: scale(1.02);
-}
-
-.neon_selector:active {
-    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.25);
-    border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
-    box-shadow: 0 0 0.7vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.5);
-    transform: scale(0.98);
-}
-
-.neon_selector option {
-    background: var(--color_light_black);
-    color: rgb(var(--color_r), var(--color_g), var(--color_b));
-    font-family: var(--font_mono), monospace;
-    font-size: 0.9vh;
-    padding: 0.5vh;
-}
-
-.neon_selector option:hover {
-    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
-}
-
-.neon_selector:focus option:checked {
-    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.2);
 }
 
 .neon_selector:focus {
@@ -467,7 +235,6 @@
     background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.15);
     border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
 }
-*/
 
 /* Enhanced Sessions Container */
 .sessions_container {
@@ -515,34 +282,21 @@
     font-size: 1.2vh;
     padding: 1vh 1.5vh;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: all 0.2s ease;
     text-transform: uppercase;
     letter-spacing: 0.05vh;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 0 0.5vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.2);
 }
 
 .neon_button:hover {
     background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.2);
     border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
     box-shadow: 0 0 1vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.4);
-    transform: translateY(-0.2vh);
-}
-
-.neon_button:active {
-    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
-    border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
-    box-shadow: 0 0 1.5vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.6);
-    transform: translateY(0);
 }
 
 #chat_sessions {
     flex: 1;
     overflow-y: auto;
     padding: 0.5vh;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
 }
 
 .session_item {
@@ -550,21 +304,19 @@
     margin: 0.3vh 0.5vh;
     border: 0.05vh solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.2);
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
     border-radius: 0.2vh;
     position: relative;
     gap: 0.4vh;
-    animation: fadeIn 0.3s ease-out;
 }
 
 .session_item:hover {
     border-color: rgba(var(--color_r), var(--color_g), var(--color_b), 0.5);
     background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.08);
     box-shadow: 0 0.1vh 0.3vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.2);
-    transform: translateX(0.5vh);
-    animation: pulse 0.5s ease-in-out;
+    transform: translateX(0.2vh);
 }
 
 .session_item.active {
@@ -574,8 +326,7 @@
     border-left: 0.3vh solid rgb(var(--color_r), var(--color_g), var(--color_b));
     margin-left: 0.2vh;
     padding-left: 1.8vh;
-    transform: translateX(0.5vh);
-    animation: scaleIn 0.3s ease-out;
+    transform: translateX(0.2vh);
 }
 
 .session_item.active::before {
@@ -618,41 +369,11 @@
     font-family: var(--font_main), sans-serif;
     font-size: 1vh;
     color: rgba(var(--color_r), var(--color_g), var(--color_b), 0.8);
-    border-radius: 0.2vh;
 }
 
 .sidebar_item:hover {
     color: rgb(var(--color_r), var(--color_g), var(--color_b));
     background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.05);
-    transform: translateX(0.3vh);
-}
-
-.sidebar_item:active {
-    color: rgb(var(--color_r), var(--color_g), var(--color_b));
-    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.1);
-    transform: translateX(0.5vh);
-}
-
-.sidebar_item:hover {
-    color: rgb(var(--color_r), var(--color_g), var(--color_b));
-    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.05);
-}
-
-/* Settings trigger container */
-#settings-trigger-container {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1vh 0;
-}
-
-/* Ensure proper width for settings button */
-.lmstudio-trigger-btn {
-  width: 100%;
-  max-width: 200px;
-  margin: 0 auto;
-  padding: 1vh !important;
 }
 
 /* Chat Main Area */
@@ -682,7 +403,6 @@
     display: flex;
     flex-direction: column;
     gap: 0.8vh;
-    margin-bottom: 120px; /* Add space for the floating input dock */
 }
 
 /* Message Styles */
@@ -692,7 +412,6 @@
     max-width: 75%;
     animation: messageSlideIn 0.4s ease-out;
     margin: 0.2vh 0;
-    transition: all 0.3s ease;
 }
 
 .user_message {
@@ -803,14 +522,13 @@
     background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.05);
     border-radius: 0.2vh;
     border-left: 0.2vh solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    animation: slideInUp 0.4s ease-out;
+    transition: all 0.2s ease;
 }
 
 .stat_item:hover {
     background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.08);
     border-left-color: rgb(var(--color_r), var(--color_g), var(--color_b));
-    transform: translateX(0.3vh);
+    transform: translateX(0.1vh);
 }
 
 .stat_label {
@@ -849,7 +567,6 @@
 }
 
 /* Input Bar - Enhanced */
-/*
 #input_bar {
     min-height: 10vh;
     max-height: 20vh;
@@ -897,15 +614,13 @@
     overflow-y: auto;
     border-radius: 0.3vh;
     line-height: 1.5;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: all 0.3s ease;
     box-shadow: inset 0 0 0.3vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.1);
-    animation: fadeIn 0.3s ease-out;
 }
 
 #chat_input:focus {
     border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
     box-shadow: 0 0 1vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
-    transform: scale(1.01);
 }
 
 #send_button {
@@ -914,20 +629,17 @@
     min-height: 5.5vh;
     background: linear-gradient(135deg, rgba(var(--color_r), var(--color_g), var(--color_b), 0.2) 0%, rgba(var(--color_r), var(--color_g), var(--color_b), 0.1) 100%);
     box-shadow: 0 0.2vh 0.5vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: all 0.2s ease;
     border-radius: 0.3vh;
     font-weight: bold;
     font-size: 1.3vh;
-    animation: pulse 2s infinite;
 }
 
 #send_button:hover {
     background: linear-gradient(135deg, rgba(var(--color_r), var(--color_g), var(--color_b), 0.3) 0%, rgba(var(--color_r), var(--color_g), var(--color_b), 0.15) 100%);
     box-shadow: 0 0.3vh 0.8vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.4);
-    transform: translateY(-0.3vh);
-    animation: none;
+    transform: translateY(-0.1vh);
 }
-*/
 
 /* Animations */
 @keyframes messageSlideIn {
@@ -939,76 +651,6 @@
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes slideInLeft {
-    from {
-        opacity: 0;
-        transform: translateX(-2vh);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-@keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(2vh);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-@keyframes slideInUp {
-    from {
-        opacity: 0;
-        transform: translateY(2vh);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes slideInDown {
-    from {
-        opacity: 0;
-        transform: translateY(-2vh);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes scaleIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-}
-
-@keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-1vh); }
 }
 
 @keyframes glowPulse {
@@ -1135,14 +777,6 @@
     font-size: 1.1vh;
     padding: 0.8vh;
     outline: none;
-    border-radius: 0.2vh;
-    transition: all 0.3s ease;
-}
-
-#session_search:focus {
-    border-color: rgb(var(--color_r), var(--color_g), var(--color_b));
-    box-shadow: 0 0 0.5vh rgba(var(--color_r), var(--color_g), var(--color_b), 0.3);
-    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.15);
 }
 
 #session_search:focus {
@@ -1190,19 +824,6 @@
     cursor: pointer;
     font-size: 0.8vh;
     transition: all 0.2s ease;
-    border-radius: 0.2vh;
-}
-
-.session_action:hover {
-    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.4);
-    color: rgb(var(--color_r), var(--color_g), var(--color_b));
-    transform: scale(1.1);
-}
-
-.session_action:active {
-    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.6);
-    color: rgb(var(--color_r), var(--color_g), var(--color_b));
-    transform: scale(0.95);
 }
 
 .session_action:hover {
@@ -1306,49 +927,4 @@
     color: rgba(var(--color_r), var(--color_g), var(--color_b), 0.7);
     font-size: 0.9em;
     margin-top: 0.2vh;
-}
-
-/* Settings trigger container */
-#settings-trigger-container {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1vh 0;
-}
-
-/* Ensure proper width for settings button */
-.lmstudio-trigger-btn {
-  width: 100%;
-  max-width: 200px;
-  margin: 0 auto;
-  padding: 1vh !important;
-}
-
-/* Sidebar item styling */
-.sidebar_item {
-  display: flex;
-  align-items: center;
-  gap: 1vh;
-  padding: 1vh !important;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: var(--font_main), sans-serif;
-  font-size: 1vh;
-  color: rgba(var(--color_r), var(--color_g), var(--color_b), 0.8);
-  border-radius: 0.2vh;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.sidebar_item:hover {
-  color: rgb(var(--color_r), var(--color_g), var(--color_b));
-  background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.05);
-  transform: translateX(0.3vh);
-}
-
-.sidebar_item:active {
-  color: rgb(var(--color_r), var(--color_g), var(--color_b));
-  background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.1);
-  transform: translateX(0.5vh);
 }

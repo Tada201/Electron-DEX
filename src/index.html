@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>eDEX Chatbot</title>
+
+        <!-- Load main css -->
+        <link rel="stylesheet" href="assets/css/main.css" />
+        <link rel="stylesheet" href="assets/css/boot_screen.css" />
+        <!-- Load main modules css -->
+        <link rel="stylesheet" href="assets/css/main_shell.css" />
+        <link rel="stylesheet" href="assets/css/keyboard.css" />
+        <!-- Load secondary modules css -->
+        <link rel="stylesheet" href="assets/css/mod_column.css" />
+        <link rel="stylesheet" href="assets/css/mod_clock.css" />
+        <link rel="stylesheet" href="assets/css/extra_ratios.css" />
+        <!-- Load custom chat css -->
+        <link rel="stylesheet" href="assets/css/terminal.css" />
+        <link rel="stylesheet" href="assets/css/chat.css" />
+        <link rel="stylesheet" href="assets/css/chatbot_layout.css" />
+        <link rel="stylesheet" href="assets/css/modal.css" />
+
+        <!-- Load classes -->
+        <script src="classes/chatbot.class.js"></script>
+        <script src="classes/terminal.class.js"></script>
+        <script src="classes/session.class.js"></script>
+        <script src="utils/markdown.js"></script>
+    </head>
+    <body class="solidBackground">
+        <section id="boot_screen">
+        </section>
+
+        <!-- Modern Chatbot Layout -->
+        <div id="app_container" style="display: none;">
+            <!-- Status Header -->
+            <header id="status_header">
+                <button class="mobile-menu-toggle" id="mobile_menu_toggle" style="display: none;">☰</button>
+
+                <div class="header_content">
+                    <div class="status_item">
+                        <span class="status_label">MODEL:</span>
+                        <select id="model_selector" class="status_value">
+                            <option value="edex-ai">eDEX-AI v1.0</option>
+                            <option value="gpt-4">GPT-4</option>
+                            <option value="claude">Claude</option>
+                            <option value="local">Local Model</option>
+                        </select>
+                    </div>
+                    <div class="status_item">
+                        <span class="status_label">STATUS:</span>
+                        <span class="status_value" id="connection_status">ONLINE</span>
+                    </div>
+                    <div class="status_item">
+                        <span class="status_label">TIME:</span>
+                        <span class="status_value" id="system_clock">--:--:--</span>
+                    </div>
+                </div>
+                <div class="scanlines"></div>
+            </header>
+
+            <!-- Main Layout Container -->
+            <div id="main_layout">
+                <!-- Sidebar -->
+                <aside id="sidebar">
+  
+                    <div class="sidebar_content">
+                        <div class="sessions_header">
+                            <div class="search-container">
+                                <input type="text" id="session_search" placeholder="Search sessions...">
+                            </div>
+                            <div class="session_controls">
+                                <button id="new_chat_btn" class="neon_button session_control_btn">+ NEW CHAT</button>
+                                <div class="persona_selector_container">
+                                    <span class="control_label">PROFILE:</span>
+                                    <select id="persona_selector" class="neon_selector">
+                                        <option value="default">DEFAULT</option>
+                                        <option value="creative">CREATIVE</option>
+                                        <option value="analytical">ANALYTICAL</option>
+                                        <option value="helpful">HELPFUL</option>
+                                        <option value="technical">TECHNICAL</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sessions_container">
+                            <div class="sessions_list_header">
+                                <span class="sessions_label">ACTIVE SESSIONS</span>
+                                <span class="sessions_count" id="sessions_count">1</span>
+                            </div>
+                            <div id="chat_sessions">
+                                <div class="session_item active" data-session="default">
+                                    <span class="session_title">Default Session</span>
+                                    <span class="session_time">Now</span>
+                                    <div class="session_actions">
+                                        <button class="session_action pin_btn" title="Pin">📌</button>
+                                        <button class="session_action delete_btn" title="Delete">🗑</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sidebar_footer">
+                            <div class="sidebar_item" id="settings_btn">
+                                <span class="sidebar_icon">⚙</span>
+                                <span>SETTINGS</span>
+                            </div>
+                            <div class="sidebar_item" id="about_btn">
+                                <span class="sidebar_icon">ℹ</span>
+                                <span>ABOUT</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="scanlines"></div>
+                </aside>
+
+                <!-- Chat Feed -->
+                <main id="chat_main">
+          
+                    <div id="chat_feed">
+                        <div id="welcome_message" class="system_message">
+                            <span class="message_icon">[SYSTEM]</span>
+                            <span class="message_content">eDEX Chatbot Interface Online - Ready for neural communication</span>
+                            <span class="message_time">--:--</span>
+                        </div>
+                    </div>
+                    <div class="neural-activity"></div>
+                    <div class="scanlines"></div>
+                </main>
+
+                <!-- System Panels -->
+                <aside id="system_panels">
+                    <section class="system_panel">
+
+                        <div class="panel_content">
+                            <div class="stat_item">
+                                <span class="stat_label">API LATENCY:</span>
+                                <span class="stat_value" id="api_latency">--ms</span>
+                            </div>
+                            <div class="stat_item">
+                                <span class="stat_label">TOKENS:</span>
+                                <span class="stat_value" id="token_count">0</span>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section class="system_panel">
+   
+                        <div class="panel_content">
+                            <div class="stat_item">
+                                <span class="stat_label">SESSIONS:</span>
+                                <span class="stat_value" id="active_sessions">1</span>
+                            </div>
+                            <div class="stat_item">
+                                <span class="stat_label">UPTIME:</span>
+                                <span class="stat_value" id="uptime">00:00</span>
+                            </div>
+                        </div>
+                    </section>
+                </aside>
+            </div>
+
+            <!-- Input Bar -->
+            <footer id="input_bar">
+                <div class="input_status">
+                    <span id="input_status_text">Ready for input - Press Enter to send, Shift+Enter for new line</span>
+                </div>
+                <div class="input_container">
+                    <div class="slash-suggestions" id="slash_suggestions" style="display: none;"></div>
+                    <textarea id="chat_input" placeholder="Enter your message or type / for commands..." rows="1"></textarea>
+                    <button id="send_button" class="neon_button">SEND</button>
+                </div>
+            </footer>
+        </div>
+
+        <!-- API Settings Modal -->
+        <div id="api_settings_modal" class="modal-overlay" style="display: none;">
+            <div class="modal-container">
+                <!-- Header -->
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <h2><span class="modal-icon">⚙</span> API SETTINGS</h2>
+                        <p class="modal-subtitle">Configure connections to AI chatbot providers</p>
+                    </div>
+                    <button class="modal-close" id="api_modal_close"><span class="icon-close">✕</span></button>
+                </div>
+
+                <div class="modal-body">
+                    <!-- Provider Sidebar -->
+                    <div class="provider-sidebar">
+                        <div class="provider-tab active" data-provider="openai">
+                            <div class="provider-icon">🧠</div>
+                            <span class="provider-name">OpenAI</span>
+                        </div>
+                        <div class="provider-tab" data-provider="anthropic">
+                            <div class="provider-icon">🤖</div>
+                            <span class="provider-name">Anthropic</span>
+                        </div>
+                        <div class="provider-tab" data-provider="google">
+                            <div class="provider-icon">💎</div>
+                            <span class="provider-name">Google Gemini</span>
+                        </div>
+                        <div class="provider-tab" data-provider="mistral">
+                            <div class="provider-icon">🌪</div>
+                            <span class="provider-name">Mistral</span>
+                        </div>
+                        <div class="provider-tab" data-provider="groq">
+                            <div class="provider-icon">⚡</div>
+                            <span class="provider-name">Groq</span>
+                        </div>
+                        <div class="provider-tab" data-provider="xai">
+                            <div class="provider-icon">🚀</div>
+                            <span class="provider-name">xAI</span>
+                        </div>
+                        <div class="provider-tab coming-soon">
+                            <div class="provider-icon">⏰</div>
+                            <span class="provider-name">Coming Soon</span>
+                        </div>
+                    </div>
+
+                    <!-- Main Configuration Panel -->
+                    <div class="provider-config">
+                        <!-- OpenAI Configuration -->
+                        <div class="config-panel active" data-provider="openai">
+                            <div class="config-header">
+                                <h3>OpenAI Configuration</h3>
+                                <div class="provider-info">
+                                    <p>Get your API key from <a href="https://platform.openai.com" target="_blank">platform.openai.com</a></p>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="openai_api_key"><span class="field-icon">🔐</span> API Key</label>
+                                <div class="input-container">
+                                    <input type="password" id="openai_api_key" placeholder="sk-proj-..." class="form-input">
+                                    <button type="button" class="toggle-visibility" data-target="openai_api_key">👁</button>
+                                </div>
+                                <div class="validation-message"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="openai_model"><span class="field-icon">🎛</span> Model</label>
+                                <select id="openai_model" class="form-select">
+                                    <option value="gpt-4o">GPT-4o</option>
+                                    <option value="gpt-4o-mini">GPT-4o Mini</option>
+                                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                    <option value="gpt-4">GPT-4</option>
+                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="openai_temperature"><span class="field-icon">🌡</span> Temperature: <span id="openai_temp_value">0.7</span></label>
+                                <input type="range" id="openai_temperature" min="0" max="1" step="0.1" value="0.7" class="form-slider">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="openai_max_tokens"><span class="field-icon">💾</span> Max Tokens</label>
+                                <input type="number" id="openai_max_tokens" min="256" max="32000" value="2048" class="form-input">
+                            </div>
+                        </div>
+
+                        <!-- Anthropic Configuration -->
+                        <div class="config-panel" data-provider="anthropic">
+                            <div class="config-header">
+                                <h3>Anthropic Configuration</h3>
+                                <div class="provider-info">
+                                    <p>Get your API key from <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="anthropic_api_key"><span class="field-icon">🔐</span> API Key</label>
+                                <div class="input-container">
+                                    <input type="password" id="anthropic_api_key" placeholder="sk-ant-..." class="form-input">
+                                    <button type="button" class="toggle-visibility" data-target="anthropic_api_key">👁</button>
+                                </div>
+                                <div class="validation-message"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="anthropic_model"><span class="field-icon">🎛</span> Model</label>
+                                <select id="anthropic_model" class="form-select">
+                                    <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                                    <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</option>
+                                    <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                                    <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+                                    <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="anthropic_max_tokens"><span class="field-icon">💾</span> Max Tokens</label>
+                                <input type="number" id="anthropic_max_tokens" min="256" max="200000" value="4096" class="form-input">
+                            </div>
+                        </div>
+
+                        <!-- Google Gemini Configuration -->
+                        <div class="config-panel" data-provider="google">
+                            <div class="config-header">
+                                <h3>Google Gemini Configuration</h3>
+                                <div class="provider-info">
+                                    <p>Get your API key from <a href="https://makersuite.google.com" target="_blank">Google AI Studio</a></p>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="google_api_key"><span class="field-icon">🔐</span> API Key</label>
+                                <div class="input-container">
+                                    <input type="password" id="google_api_key" placeholder="AIza..." class="form-input">
+                                    <button type="button" class="toggle-visibility" data-target="google_api_key">👁</button>
+                                </div>
+                                <div class="validation-message"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="google_model"><span class="field-icon">🎛</span> Model</label>
+                                <select id="google_model" class="form-select">
+                                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                                    <option value="gemini-1.0-pro">Gemini 1.0 Pro</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Mistral Configuration -->
+                        <div class="config-panel" data-provider="mistral">
+                            <div class="config-header">
+                                <h3>Mistral Configuration</h3>
+                                <div class="provider-info">
+                                    <p>Get your API key from <a href="https://console.mistral.ai" target="_blank">console.mistral.ai</a></p>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="mistral_api_key"><span class="field-icon">🔐</span> API Key</label>
+                                <div class="input-container">
+                                    <input type="password" id="mistral_api_key" placeholder="mis_..." class="form-input">
+                                    <button type="button" class="toggle-visibility" data-target="mistral_api_key">👁</button>
+                                </div>
+                                <div class="validation-message"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="mistral_model"><span class="field-icon">🎛</span> Model</label>
+                                <select id="mistral_model" class="form-select">
+                                    <option value="mistral-large-latest">Mistral Large</option>
+                                    <option value="mistral-medium">Mistral Medium</option>
+                                    <option value="mistral-small">Mistral Small</option>
+                                    <option value="open-mistral-7b">Open Mistral 7B</option>
+                                    <option value="open-mixtral-8x7b">Open Mixtral 8x7B</option>
+                                    <option value="open-mixtral-8x22b">Open Mixtral 8x22B</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Groq Configuration -->
+                        <div class="config-panel" data-provider="groq">
+                            <div class="config-header">
+                                <h3>Groq Configuration</h3>
+                                <div class="provider-info">
+                                    <p>Get your API key from <a href="https://console.groq.com" target="_blank">console.groq.com</a></p>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="groq_api_key"><span class="field-icon">🔐</span> API Key</label>
+                                <div class="input-container">
+                                    <input type="password" id="groq_api_key" placeholder="gsk_..." class="form-input">
+                                    <button type="button" class="toggle-visibility" data-target="groq_api_key">👁</button>
+                                </div>
+                                <div class="validation-message"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="groq_model"><span class="field-icon">🎛</span> Model</label>
+                                <select id="groq_model" class="form-select">
+                                    <option value="llama3-70b-8192">Llama 3 70B</option>
+                                    <option value="llama3-8b-8192">Llama 3 8B</option>
+                                    <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+                                    <option value="gemma-7b-it">Gemma 7B IT</option>
+                                    <option value="llama2-70b-4096">Llama 2 70B</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- xAI Configuration -->
+                        <div class="config-panel" data-provider="xai">
+                            <div class="config-header">
+                                <h3>xAI (Grok) Configuration</h3>
+                                <div class="provider-info">
+                                    <p>Get your API key from <a href="https://console.x.ai" target="_blank">console.x.ai</a></p>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="xai_api_key"><span class="field-icon">🔐</span> API Key</label>
+                                <div class="input-container">
+                                    <input type="password" id="xai_api_key" placeholder="xai-..." class="form-input">
+                                    <button type="button" class="toggle-visibility" data-target="xai_api_key">👁</button>
+                                </div>
+                                <div class="validation-message"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="xai_model"><span class="field-icon">🎛</span> Model</label>
+                                <select id="xai_model" class="form-select">
+                                    <option value="grok-beta">Grok Beta</option>
+                                    <option value="grok-2">Grok 2</option>
+                                    <option value="grok-2-mini">Grok 2 Mini</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="modal-footer">
+                    <div class="status-display" id="connection_status">
+                        <span class="status-text">[SYSTEM] Awaiting configuration...</span>
+                    </div>
+                    <div class="footer-buttons">
+                        <button class="modal-button cancel" id="api_modal_cancel"><span class="button-icon">✖</span> CANCEL</button>
+                        <button class="modal-button test" id="api_test_connection"><span class="button-icon">⚡</span> TEST CONNECTION</button>
+                        <button class="modal-button save" id="api_save_settings"><span class="button-icon">✓</span> SAVE</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="main.js"></script>
+    </body>
+</html>

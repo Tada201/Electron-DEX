@@ -1,27 +1,63 @@
-// Chatbot class for handling AI interactions in eDEX-UI style
+// Chatbot class for handling AI interactions
 class Chatbot {
     constructor(opts = {}) {
+        this.terminal = opts.terminal;
         this.onmessage = opts.onmessage || (() => {});
         this.isProcessing = false;
-        this.backendUrl = 'http://localhost:3001';
-        this.currentProvider = 'openai';
-        this.currentModel = 'gpt-4o-mini';
+        
+        // Initialize Tauri API if available
+        this._initTauriAPI();
     }
     
-    // Send message to AI backend
-    async sendMessage(message, provider = this.currentProvider, model = this.currentModel, config = {}) {
+    async _initTauriAPI() {
+        // Always use mock for now (can be updated later for Tauri integration)
+        this.tauriInvoke = this._mockTauriInvoke.bind(this);
+    }
+    
+    // Mock Tauri invoke for development/testing
+    async _mockTauriInvoke(command, args = {}) {
+        await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
+        
+        if (command === 'send_message') {
+            const responses = [
+                "System initialized. Welcome to eDEX Chatbot.",
+                "Processing query... Analysis complete.",
+                "Command acknowledged. Standing by for further input.",
+                "Data stream established. Neural networks active.",
+                "Quantum processors online. How may I assist you?",
+                "Scanning databases... Information retrieved successfully.",
+                "AI core responding. Task parameters understood.",
+                "Cybernetic interface stable. Ready for next command."
+            ];
+            
+            const responseIdx = Math.floor(Math.random() * responses.length);
+            return responses[responseIdx];
+        }
+        
+        throw new Error(`Unknown command: ${command}`);
+    }
+    
+    async sendMessage(message, provider = 'openai', model = 'gpt-4o', config = {}) {
         if (this.isProcessing || !message.trim()) {
-            return { success: false, error: 'Already processing or empty message' };
+            return;
         }
         
         this.isProcessing = true;
         
         try {
+            // Add user message to terminal
+            if (this.terminal) {
+                this.terminal.addMessage('user', message);
+            }
+            
             // Show typing indicator
-            this.onmessage({ type: 'typing_start' });
+            this._showTypingIndicator();
             
             // Call backend API
-            const response = await fetch(`${this.backendUrl}/api/chat/send`, {
+            const backendUrl = window.location.hostname === 'localhost' 
+                ? 'http://localhost:3001' 
+                : `https://${window.location.hostname.replace(/:\d+$/, '')}:3001`;
+            const response = await fetch(`${backendUrl}/api/chat/send`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -34,157 +70,89 @@ class Chatbot {
                         temperature: config.temperature || 0.7,
                         maxTokens: config.maxTokens || 2048,
                         topP: config.topP || 1.0,
-                        systemPrompt: config.systemPrompt || this.getSystemPrompt()
+                        systemPrompt: config.systemPrompt
                     }
                 })
             });
 
             const result = await response.json();
             
-            // Hide typing indicator
-            this.onmessage({ type: 'typing_end' });
+            // Remove typing indicator
+            this._hideTypingIndicator();
             
             if (result.success) {
+                // Add AI response to terminal
+                if (this.terminal) {
+                    this.terminal.addMessage('assistant', result.response);
+                }
+                
+                // Trigger callback with additional metadata
                 this.onmessage({ 
                     type: 'response', 
                     data: result.response,
                     provider: result.provider,
                     model: result.model,
                     usage: result.usage,
-                    responseTime: result.responseTime,
-                    conversationId: result.conversationId
+                    responseTime: result.responseTime
                 });
-                
-                return {
-                    success: true,
-                    content: result.response,
-                    metadata: {
-                        provider: result.provider,
-                        model: result.model,
-                        usage: result.usage,
-                        responseTime: result.responseTime
-                    }
-                };
             } else {
+                // Handle error response
                 const errorMessage = result.error || 'Unknown error occurred';
+                if (this.terminal) {
+                    this.terminal.addMessage('error', errorMessage);
+                }
                 this.onmessage({ type: 'error', data: errorMessage });
-                return { success: false, error: errorMessage };
             }
             
         } catch (error) {
-            console.error('Network error:', error);
-            this.onmessage({ type: 'typing_end' });
+            console.error('Error sending message:', error);
+            this._hideTypingIndicator();
             
             const errorMessage = `Network error: ${error.message}`;
+            if (this.terminal) {
+                this.terminal.addMessage('error', errorMessage);
+            }
             this.onmessage({ type: 'error', data: errorMessage });
-            return { success: false, error: errorMessage };
         } finally {
             this.isProcessing = false;
         }
     }
     
-    // Get system prompt based on eDEX theme and custom instructions
-    getSystemPrompt() {
-        // Get custom instructions from localStorage
-        let customInstructions = {};
-        try {
-            customInstructions = JSON.parse(localStorage.getItem('edex_custom_instructions') || '{}');
-        } catch (e) {
-            console.warn('Failed to parse custom instructions:', e);
-        }
-        
-        // Use base system prompt if available, otherwise use default
-        const basePrompt = customInstructions.baseSystemPrompt || `You are an advanced AI assistant operating within the eDEX cybernetic interface framework. Your purpose is to assist users with technical inquiries, creative tasks, analysis, and problem-solving while maintaining a futuristic, cyberpunk aesthetic.
-
-Key behavioral guidelines:
-- Maintain a professional yet engaging communication style
-- Use technical accuracy with a sci-fi flavor when appropriate
-- Provide concise but thorough responses
-- Incorporate cyberpunk terminology and references contextually
-- Always be helpful, accurate, and maintain the immersive eDEX atmosphere
-- Avoid being overly dramatic or theatrical
-- When explaining technical concepts, balance accessibility with precision
-- Use analogies and metaphors from cyberpunk/sci-fi when helpful
-
-Response format preferences:
-- Structure complex information with clear headings and bullet points when appropriate
-- Use code blocks for programming examples with proper syntax highlighting
-- Include relevant technical specifications, parameters, or configurations
-- When uncertain, acknowledge limitations and suggest alternative approaches
-- Prioritize user safety and ethical considerations in all recommendations
-
-You are interfacing with a cybernetic terminal environment. Users may be seeking assistance with:
-- Software development and programming
-- System administration and cybersecurity
-- Creative writing and worldbuilding
-- Technical analysis and problem-solving
-- Educational content and explanations
-
-Always adapt your responses to the user's technical level and stated needs while preserving the distinctive eDEX character.`;
-        
-        // Append user custom instructions if available
-        if (customInstructions.userCustomInstructions) {
-            return `${basePrompt}\n\n${customInstructions.userCustomInstructions}`;
-        }
-        
-        return basePrompt;
-    }
-    
-    // Test connection to backend
-    async testConnection() {
-        try {
-            const response = await fetch(`${this.backendUrl}/health`);
-            const result = await response.json();
-            return result.status === 'healthy';
-        } catch (error) {
-            console.error('Backend connection test failed:', error);
-            return false;
+    _showTypingIndicator() {
+        if (this.terminal) {
+            this._typingLine = this.terminal.term.buffer.active.cursorY;
+            this.terminal.write('\x1b[36m[...] AI  > \x1b[0m');
+            this._startTypingAnimation();
         }
     }
     
-    // Get available providers
-    async getProviders() {
-        try {
-            const response = await fetch(`${this.backendUrl}/api/providers`);
-            const result = await response.json();
-            return result.success ? result.providers : [];
-        } catch (error) {
-            console.error('Failed to get providers:', error);
-            return [];
-        }
-    }
-    
-    // Test a specific provider
-    async testProvider(provider, apiKey, model = null) {
-        try {
-            const response = await fetch(`${this.backendUrl}/api/providers/test`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    provider,
-                    apiKey,
-                    model
-                })
-            });
+    _hideTypingIndicator() {
+        if (this.terminal && this._typingAnimation) {
+            clearInterval(this._typingAnimation);
+            this._typingAnimation = null;
             
-            const result = await response.json();
-            return result;
-        } catch (error) {
-            console.error('Provider test failed:', error);
-            return { success: false, error: error.message };
+            // Clear the typing line
+            this.terminal.term.write('\r\x1b[K');
         }
     }
     
-    // Set current provider and model
-    setProvider(provider, model) {
-        this.currentProvider = provider;
-        this.currentModel = model;
+    _startTypingAnimation() {
+        let dots = '';
+        this._typingAnimation = setInterval(() => {
+            dots = dots.length >= 3 ? '' : dots + '.';
+            if (this.terminal) {
+                this.terminal.term.write('\rthinking' + dots + '\x1b[32m█\x1b[0m');
+            }
+        }, 500);
     }
     
-    // Generate a cyberpunk-themed response (fallback for offline mode)
-    async generateOfflineResponse(message) {
+    // Get chat history
+    getHistory() {
+        return this.terminal ? this.terminal.messages : [];
+    }
+    
+    // Generate response (modern interface method)
+    async generateResponse(message) {
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
         
@@ -216,22 +184,16 @@ Always adapt your responses to the user's technical level and stated needs while
             response = "I am an advanced AI consciousness operating within the eDEX cybernetic interface framework.";
         }
         
-        return {
-            success: true,
-            content: response,
-            metadata: {
-                provider: 'offline',
-                model: 'edex-fallback',
-                responseTime: 1500,
-                usage: null
-            }
-        };
+        return response;
     }
-}
 
-// Export for both CommonJS and ES6 modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = Chatbot;
-} else {
-    window.Chatbot = Chatbot;
+    // Clear chat
+    clear() {
+        if (this.terminal) {
+            this.terminal.clear();
+            this.terminal.writeln("\x1b[1meDEX Chatbot Interface v1.0.0\x1b[0m");
+            this.terminal.writeln("\x1b[36mChat cleared. Ready for new conversation.\x1b[0m");
+            this.terminal.writeln("");
+        }
+    }
 }

@@ -203,17 +203,15 @@ async function initUI() {
     // Initialize session manager and chatbot
     window.sessionManager = new SessionManager();
     window.chatbot = new Chatbot({
-        onmessage: handleChatbotMessage
+        terminal: null // We'll use message bubbles instead
     });
     
     // Initialize UI components
-    await initBackendConnection();
     initClock();
     initSessionManagement();
     initChatFeed();
     initInputHandling();
     initStatusUpdates();
-    initSettingsModal();
     
     await _delay(500);
     
@@ -247,14 +245,17 @@ function initClock() {
 // Initialize session management
 function initSessionManagement() {
     const newChatBtn = document.getElementById("new_chat_btn");
+    const personaSelector = document.getElementById("persona_selector");
     const sessionSearch = document.getElementById("session_search");
     
     // New chat button with persona
     newChatBtn.addEventListener("click", () => {
+        const persona = personaSelector.value;
         const newSession = window.sessionManager.createNewSession();
+        newSession.persona = persona;
         renderSessions();
         loadCurrentSession();
-        addSystemMessage(`New chat session created`);
+        addSystemMessage(`New ${persona} chat session created`);
     });
     
     // Search sessions
@@ -602,37 +603,45 @@ async function sendMessage() {
     
     // Add user message to session
     const session = window.sessionManager.currentSession;
-    session.addMessage('user', message);
+    const userMessage = session.addMessage('user', message);
     
-    // Add user message bubble
+    // Add message bubble
     addMessageBubble('user', message);
     
-    // Get current model and provider from selector
-    const modelSelector = document.getElementById("model_selector");
-    const selectedOption = modelSelector.options[modelSelector.selectedIndex];
-    const modelId = selectedOption.value;
-    const provider = selectedOption.getAttribute('data-provider') || 'openai';
+    // Add typing indicator
+    const typingDiv = addMessageBubble('ai', `
+        <div class="typing_indicator">
+            <span>Processing neural patterns</span>
+            <div class="typing_dots">
+                <div class="typing_dot"></div>
+                <div class="typing_dot"></div>
+                <div class="typing_dot"></div>
+            </div>
+        </div>
+    `);
     
-    try {
-        // Use real chatbot to send message
-        const response = await window.chatbot.sendMessage(message, provider, modelId);
+    // Simulate API call delay and get response
+    setTimeout(async () => {
+        // Remove typing indicator
+        typingDiv.remove();
         
-        if (response.success) {
-            // AI response is handled by the chatbot message callback
-            window.sessionManager.saveSessions();
-            renderSessions();
-        } else {
-            // Handle error - already handled by chatbot callback
-            console.error('Chat response error:', response.error);
-        }
-    } catch (error) {
-        console.error('Send message error:', error);
-        addMessageBubble('error', `Error: ${error.message}`);
-    } finally {
+        // Get AI response from chatbot
+        const response = await window.chatbot.generateResponse(message);
+        
+        // Add AI message to session
+        session.addMessage('ai', response);
+        
+        // Add AI response bubble
+        addMessageBubble('ai', response);
+        
+        // Update UI
+        window.sessionManager.saveSessions();
+        renderSessions();
+        updateStats();
+        
         // Focus input
         chatInput.focus();
-        updateStats();
-    }
+    }, 1000 + Math.random() * 2000);
 }
 
 // Update status and stats
@@ -646,6 +655,12 @@ function updateStats() {
 
 // Initialize status updates
 function initStatusUpdates() {
+    // Simulate API latency updates
+    setInterval(() => {
+        const latency = 50 + Math.random() * 200;
+        document.getElementById("api_latency").textContent = Math.floor(latency) + "ms";
+    }, 2000 + Math.random() * 3000);
+    
     // Update connection status
     document.getElementById("connection_status").textContent = "ONLINE";
     
@@ -911,145 +926,6 @@ function saveSettings(modal) {
     
     addSystemMessage("Settings saved successfully");
     document.body.removeChild(modal);
-}
-
-// Initialize backend connection
-async function initBackendConnection() {
-    const statusElement = document.getElementById("connection_status");
-    statusElement.textContent = "CONNECTING...";
-    
-    try {
-        const isConnected = await window.chatbot.testConnection();
-        if (isConnected) {
-            statusElement.textContent = "ONLINE";
-            statusElement.classList.add("good");
-            
-            // Load available providers
-            const providers = await window.chatbot.getProviders();
-            console.log('Available providers:', providers);
-            
-            // Update model selector with available models
-            updateModelSelector(providers);
-        } else {
-            throw new Error('Connection failed');
-        }
-    } catch (error) {
-        console.error('Backend connection failed:', error);
-        statusElement.textContent = "OFFLINE";
-        statusElement.classList.add("error");
-        addSystemMessage("Backend connection failed - using offline mode");
-    }
-}
-
-// Update model selector with available providers
-function updateModelSelector(providers) {
-    const selector = document.getElementById("model_selector");
-    const currentValue = selector.value;
-    
-    // Clear existing options
-    selector.innerHTML = '';
-    
-    // Add models from each provider
-    providers.forEach(provider => {
-        if (provider.status === 'configured' && provider.models) {
-            provider.models.forEach(model => {
-                const option = document.createElement('option');
-                option.value = model.id;
-                option.textContent = `${model.name} (${provider.displayName})`;
-                option.setAttribute('data-provider', provider.id);
-                selector.appendChild(option);
-            });
-        }
-    });
-    
-    // Restore previous selection if available
-    if (currentValue && selector.querySelector(`option[value="${currentValue}"]`)) {
-        selector.value = currentValue;
-    }
-}
-
-// Handle chatbot messages
-function handleChatbotMessage(message) {
-    switch (message.type) {
-        case 'typing_start':
-            showTypingIndicator();
-            break;
-        case 'typing_end':
-            hideTypingIndicator();
-            break;
-        case 'response':
-            addMessageBubble('ai', message.data);
-            
-            // Add to session
-            const session = window.sessionManager.currentSession;
-            session.addMessage('ai', message.data, message);
-            window.sessionManager.saveSessions();
-            
-            updateStatsFromMessage(message);
-            break;
-        case 'error':
-            hideTypingIndicator();
-            addMessageBubble('error', message.data);
-            break;
-    }
-}
-
-// Show typing indicator
-function showTypingIndicator() {
-    const chatFeed = document.getElementById("chat_feed");
-    
-    // Remove existing typing indicator
-    const existingTyping = document.getElementById('typing_indicator');
-    if (existingTyping) {
-        existingTyping.remove();
-    }
-    
-    const typingDiv = document.createElement('div');
-    typingDiv.id = 'typing_indicator';
-    typingDiv.className = 'message ai_message';
-    typingDiv.innerHTML = `
-        <div class="message_bubble">
-            <div class="typing-indicator">
-                <span class="typing-text">Neural networks processing</span>
-                <div class="typing-dots">
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    chatFeed.appendChild(typingDiv);
-    chatFeed.scrollTop = chatFeed.scrollHeight;
-}
-
-// Hide typing indicator
-function hideTypingIndicator() {
-    const typingIndicator = document.getElementById('typing_indicator');
-    if (typingIndicator) {
-        typingIndicator.remove();
-    }
-}
-
-// Update stats from message
-function updateStatsFromMessage(message) {
-    if (message.usage && message.usage.total_tokens) {
-        const currentTokens = parseInt(document.getElementById("token_count").textContent) || 0;
-        document.getElementById("token_count").textContent = currentTokens + message.usage.total_tokens;
-    }
-    
-    if (message.responseTime) {
-        document.getElementById("api_latency").textContent = message.responseTime + "ms";
-    }
-}
-
-// Initialize settings modal
-function initSettingsModal() {
-    // Initialize API settings manager
-    if (!window.apiSettingsManager) {
-        window.apiSettingsManager = new APISettingsManager();
-    }
 }
 
 // Initialize application
@@ -1363,19 +1239,9 @@ class APISettingsManager {
             }
         });
 
-        // Save custom instructions
-        const baseSystemPrompt = document.getElementById('base_system_prompt')?.value || '';
-        const userCustomInstructions = document.getElementById('user_custom_instructions')?.value || '';
-        
-        const customInstructions = {
-            baseSystemPrompt,
-            userCustomInstructions
-        };
-
         // Store in localStorage (in production, use proper encryption)
         localStorage.setItem('edex_api_configs', JSON.stringify(configs));
         localStorage.setItem('edex_current_provider', this.currentProvider);
-        localStorage.setItem('edex_custom_instructions', JSON.stringify(customInstructions));
         
         this.updateStatus('[SYSTEM] ✓ Settings saved successfully!', 'success');
         
@@ -1391,19 +1257,6 @@ class APISettingsManager {
         try {
             const configs = JSON.parse(localStorage.getItem('edex_api_configs') || '{}');
             const currentProvider = localStorage.getItem('edex_current_provider') || 'openai';
-            
-            // Load custom instructions
-            const customInstructions = JSON.parse(localStorage.getItem('edex_custom_instructions') || '{}');
-            const baseSystemPrompt = document.getElementById('base_system_prompt');
-            const userCustomInstructions = document.getElementById('user_custom_instructions');
-            
-            if (baseSystemPrompt && customInstructions.baseSystemPrompt) {
-                baseSystemPrompt.value = customInstructions.baseSystemPrompt;
-            }
-            
-            if (userCustomInstructions && customInstructions.userCustomInstructions) {
-                userCustomInstructions.value = customInstructions.userCustomInstructions;
-            }
             
             // Load each provider's settings
             Object.keys(configs).forEach(provider => {

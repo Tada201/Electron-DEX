@@ -68,6 +68,8 @@ window.addEventListener('DOMContentLoaded', async () => {
         
         if (!bootScreen || !appContainer) {
             console.error("❌ Essential DOM elements missing");
+            // Emergency fallback
+            if (appContainer) appContainer.style.display = "flex";
             return;
         }
         
@@ -167,7 +169,17 @@ window.addEventListener('DOMContentLoaded', async () => {
         const bootScreen = document.getElementById("boot_screen");
         if (bootScreen) bootScreen.style.display = "none";
         const appContainer = document.getElementById("app_container");
-        if (appContainer) appContainer.style.display = "flex";
+        if (appContainer) {
+            appContainer.style.display = "flex";
+        } else {
+            // Create a basic app container if it doesn't exist
+            const container = document.createElement("div");
+            container.id = "app_container";
+            container.style.display = "flex";
+            container.style.height = "100vh";
+            container.innerHTML = "<div style='margin: auto; color: white; font-family: monospace;'>Application failed to load properly</div>";
+            document.body.appendChild(container);
+        }
     }
 });
 

@@ -12,7 +12,6 @@ class SettingsBridge {
     }
 
     init() {
-        console.log('SettingsBridge.init() called');
         // Check if React and ReactDOM are available
         if (typeof window.React === 'undefined' || typeof window.ReactDOM === 'undefined') {
             this.retryCount++;
@@ -31,12 +30,10 @@ class SettingsBridge {
         const React = window.React;
         const ReactDOM = window.ReactDOM;
         const isReact18 = typeof ReactDOM.createRoot !== 'undefined';
-        console.log('React and ReactDOM available, isReact18:', isReact18);
 
         // Import the styled-components based components
         // These will be loaded dynamically
         this.loadComponents().then(() => {
-            console.log('Components loaded successfully');
             // Create modal container
             this.container = document.createElement('div');
             this.container.id = 'settings-modal-container';
@@ -44,7 +41,6 @@ class SettingsBridge {
 
             // Setup event listener for settings button
             const settingsBtn = document.getElementById('settings_btn');
-            console.log('Settings button element:', settingsBtn);
             if (settingsBtn) {
                 // Clear existing content
                 settingsBtn.innerHTML = '';
@@ -57,7 +53,6 @@ class SettingsBridge {
 
                 // Render the SettingsTrigger component
                 try {
-                    console.log('Attempting to render SettingsTrigger component');
                     if (isReact18) {
                         this.root = ReactDOM.createRoot(triggerContainer);
                         this.root.render(
@@ -102,14 +97,11 @@ class SettingsBridge {
         // Add cache-busting timestamp to avoid MIME type issues
         const timestamp = Date.now();
         try {
-            console.log('Loading SettingsTrigger.js');
             const { default: SettingsTrigger } = await import(`./SettingsTrigger.js?t=${timestamp}`);
-            console.log('Loading SettingsModal.js');
             const { default: SettingsModal } = await import(`./SettingsModal.js?t=${timestamp}`);
 
             window.SettingsTrigger = SettingsTrigger;
             window.SettingsModal = SettingsModal;
-            console.log('Components loaded and assigned to window object');
         } catch (error) {
             console.error('Failed to load styled components:', error);
             throw error;
@@ -165,7 +157,6 @@ class SettingsBridge {
     }
 
     showFallbackUI() {
-        console.log('Showing fallback UI');
         const settingsBtn = document.getElementById('settings_btn');
         if (settingsBtn) {
             settingsBtn.innerHTML = `
@@ -186,6 +177,23 @@ class SettingsBridge {
                     <span style="margin-right: 8px;">⚙</span>
                     <span>SETTINGS</span>
                 </button>
+            `;
+
+            const fallbackButton = settingsBtn.querySelector('button');
+            if (fallbackButton) {
+                fallbackButton.addEventListener('click', () => {
+                    alert('Settings functionality is currently unavailable. Please try again later.');
+                });
+            }
+        }
+    }
+}
+
+// Export for global use - DO NOT initialize here
+window.SettingsBridge = new SettingsBridge();
+
+// Note: Initialization should be handled by the main application
+// to ensure proper order and avoid conflictstton>
             `;
 
             const fallbackButton = settingsBtn.querySelector('button');

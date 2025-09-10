@@ -7,7 +7,6 @@ section#boot_screen {
     padding: 0vh;
     margin: 0vh;
     overflow: hidden;
-    background-color: #000000;
 
     font-family: monospace;
     font-size: 1.4vh;
@@ -15,8 +14,6 @@ section#boot_screen {
     display: flex;
     align-items: flex-end;
     justify-content: flex-start;
-    white-space: nowrap; /* Prevent text wrapping */
-    color: #ffffff;
 }
 
 section#boot_screen.center {
@@ -33,8 +30,6 @@ section#boot_screen h1 {
     padding-right: 2vh;
     padding-left: 1.5vh;
     background-color: transparent;
-    white-space: nowrap; /* Prevent text wrapping */
-    color: #ffffff;
 
     opacity: 0;
     animation-name: fadeInTitle;
@@ -55,11 +50,11 @@ section#boot_screen h1.glitch {
 }
 
 section#boot_screen h1::before {
-    content: "eDEX CHATBOT";
+    content: "eDEX-UI";
     display: block;
     transform: translateY(100%) translateX(-2%);
     clip-path: polygon(100% 0%, 100% 40%, 0% 40%, 0% 0%);
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(var(--color_r), var(--color_g), var(--color_b), 0.8);
 
     animation-name: derezzer_top;
     animation-duration: 50ms;
@@ -83,11 +78,11 @@ section#boot_screen h1.glitch::before {
 }
 
 section#boot_screen h1::after {
-    content: "eDEX CHATBOT";
+    content: "eDEX-UI";
     display: block;
     transform: translateY(-100%) translateX(2%);
     clip-path: polygon(100% 40%, 100% 100%, 0% 100%, 0% 40%);
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(var(--color_r), var(--color_g), var(--color_b), 0.9);
 
     animation-name: derezzer_bottom;
     animation-duration: 50ms;

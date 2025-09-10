@@ -30,18 +30,16 @@ export function displayBootLine() {
         if (!bootScreen) {
             console.error("❌ Boot screen element not found");
             // Emergency fallback
-            const appContainer = document.getElementById("app_container");
-            if (appContainer) appContainer.style.display = "flex";
+            showAppContainer();
             return;
         }
         
-        if (typeof bootLines[bootIndex] === "undefined") {
-            setTimeout(displayBootLine, 300);
-            return;
-        }
-
-        if (bootLines[bootIndex] === "Boot Complete") {
-            // Add audio effect here if needed
+        // Check if we've reached the end of boot lines
+        if (bootIndex >= bootLines.length) {
+            // Show completion message if not already present
+            if (!bootScreen.innerHTML.includes("Boot Complete")) {
+                bootScreen.innerHTML += "Boot Complete<br/>";
+            }
             // Transition to main UI after boot is complete
             setTimeout(() => {
                 try {
@@ -50,8 +48,22 @@ export function displayBootLine() {
                     console.error("❌ Failed to display title screen", e);
                     // Emergency fallback
                     bootScreen.style.display = "none";
-                    const appContainer = document.getElementById("app_container");
-                    if (appContainer) appContainer.style.display = "flex";
+                    showAppContainer();
+                }
+            }, 500);
+            return;
+        }
+
+        if (bootLines[bootIndex] === "Boot Complete") {
+            // Transition to main UI after boot is complete
+            setTimeout(() => {
+                try {
+                    displayTitleScreen();
+                } catch (e) {
+                    console.error("❌ Failed to display title screen", e);
+                    // Emergency fallback
+                    bootScreen.style.display = "none";
+                    showAppContainer();
                 }
             }, 500);
             return;
@@ -91,8 +103,7 @@ export function displayBootLine() {
         // Emergency fallback to show UI
         const bootScreen = document.getElementById("boot_screen");
         if (bootScreen) bootScreen.style.display = "none";
-        const appContainer = document.getElementById("app_container");
-        if (appContainer) appContainer.style.display = "flex";
+        showAppContainer();
     }
 }
 
@@ -153,15 +164,39 @@ export async function displayTitleScreen() {
         } catch (e) {
             console.error("❌ Failed to initialize UI", e);
             // Emergency fallback: show basic UI
-            const appContainer = document.getElementById("app_container");
-            if (appContainer) appContainer.style.display = "flex";
+            showAppContainer();
         }
     } catch (error) {
         console.error("❌ Title screen error", error);
         // Emergency fallback: skip to UI
         const bootScreen = document.getElementById("boot_screen");
         if (bootScreen) bootScreen.style.display = "none";
-        const appContainer = document.getElementById("app_container");
-        if (appContainer) appContainer.style.display = "flex";
+        showAppContainer();
+    }
+}
+
+// Helper function to show the main app container
+function showAppContainer() {
+    const appContainer = document.getElementById("app_container");
+    if (appContainer) {
+        appContainer.style.display = "flex";
+        // Ensure basic UI elements are visible
+        const elementsToShow = [
+            'status_header', 'sidebar', 'chat_main', 'input_dock'
+        ];
+        elementsToShow.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.style.display = "block";
+            }
+        });
+    } else {
+        // Create a basic app container if it doesn't exist
+        const container = document.createElement("div");
+        container.id = "app_container";
+        container.style.display = "flex";
+        container.style.height = "100vh";
+        container.innerHTML = "<div style='margin: auto; color: white; font-family: monospace;'>Application loaded</div>";
+        document.body.appendChild(container);
     }
 }
