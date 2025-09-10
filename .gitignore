@@ -1,4 +1,6 @@
+#qoderignore
 .qoder
+
 .vscode
 attached_assets
 node_modules
@@ -6,3 +8,4 @@ dist
 media
 EDEXUI-src
 OpenChatUI-example
+

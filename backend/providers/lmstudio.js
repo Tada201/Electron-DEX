@@ -1,15 +1,18 @@
-// eDEX Chatbot - OpenAI Provider
+// eDEX Chatbot - LM Studio Provider
 const axios = require('axios');
 const { createHttpConfig, formatErrorForUser, validateApiKey } = require('../utils/helpers');
 
-class OpenAIProvider {
+class LMStudioProvider {
   constructor() {
-    this.name = 'openai';
-    this.displayName = 'OpenAI';
-    this.description = 'OpenAI GPT models including GPT-4o, GPT-4 Turbo, and GPT-3.5 Turbo';
-    this.baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
-    this.requiresApiKey = true;
-    this.documentationUrl = 'https://platform.openai.com/docs';
+    this.name = 'lmstudio';
+    this.displayName = 'LM Studio';
+    this.description = 'Local LLM models running in LM Studio with OpenAI-compatible API';
+    this.baseUrl = process.env.LMSTUDIO_URL || 'http://localhost:1234/v1';
+    this.requiresApiKey = false; // LM Studio doesn't require API key by default
+    this.documentationUrl = 'https://lmstudio.ai/docs';
+    this.cachedModels = null;
+    this.lastModelFetch = 0;
+    this.modelCacheDuration = 5 * 60 * 1000; // 5 minutes
   }
 
   /**
@@ -17,21 +20,8 @@ class OpenAIProvider {
    * @returns {boolean} Configuration status
    */
   isConfigured() {
-    return !!process.env.OPENAI_API_KEY;
-  }
-
-  /**
-   * Get available models
-   * @returns {Array} List of available models
-   */
-  getAvailableModels() {
-    return [
-      { id: 'gpt-4o', name: 'GPT-4o', contextLength: 128000, multimodal: true },
-      { id: 'gpt-4o-mini', name: 'GPT-4o Mini', contextLength: 128000, multimodal: true },
-      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', contextLength: 128000, multimodal: true },
-      { id: 'gpt-4', name: 'GPT-4', contextLength: 8192, multimodal: false },
-      { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', contextLength: 16385, multimodal: false }
-    ];
+    // LM Studio is always "configured" since it runs locally
+    return true;
   }
 
   /**
@@ -43,32 +33,71 @@ class OpenAIProvider {
   }
 
   /**
-   * Test connection to OpenAI API
-   * @param {string} apiKey - API key to test
+   * Get available models from LM Studio API
+   * @returns {Promise<Array>} List of available models
+   */
+  async getAvailableModels() {
+    const now = Date.now();
+    
+    // Return cached models if still valid
+    if (this.cachedModels && (now - this.lastModelFetch) < this.modelCacheDuration) {
+      return this.cachedModels;
+    }
+    
+    try {
+      const apiKey = process.env.LMSTUDIO_API_KEY || 'lm-studio';
+      const client = axios.create(createHttpConfig(this.baseUrl));
+      
+      const response = await client.get('/models', {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      // Transform the response to match our expected format
+      const models = (response.data.data || response.data.models || [])
+        .filter(model => model.id) // Ensure model has an ID
+        .map(model => ({
+          id: model.id,
+          name: model.id.split('/').pop() || model.id, // Extract name from ID
+          contextLength: model.context_length || model.max_context_length || 8192,
+          multimodal: model.multimodal || false
+        }));
+      
+      // Cache the results
+      this.cachedModels = models;
+      this.lastModelFetch = now;
+      
+      return models;
+    } catch (error) {
+      console.warn('Failed to fetch LM Studio models:', error.message);
+      // Return default models if API call fails
+      return [
+        { id: 'lmstudio-community/Meta-Llama-3-8B-Instruct', name: 'Meta-Llama-3-8B-Instruct', contextLength: 8192, multimodal: false },
+        { id: 'TheBloke/Mistral-7B-Instruct-v0.2-GGUF', name: 'Mistral-7B-Instruct-v0.2', contextLength: 32768, multimodal: false },
+        { id: 'lmstudio-community/Phi-3-mini-4k-instruct', name: 'Phi-3-mini-4k-instruct', contextLength: 4096, multimodal: false }
+      ];
+    }
+  }
+
+  /**
+   * Test connection to LM Studio API
+   * @param {string} apiKey - API key to test (optional for LM Studio)
    * @param {string} model - Model to test (optional)
    * @returns {object} Test result
    */
-  async testConnection(apiKey, model = 'gpt-3.5-turbo') {
+  async testConnection(apiKey = null, model = null) {
     const startTime = Date.now();
+    const testApiKey = apiKey || process.env.LMSTUDIO_API_KEY || 'lm-studio';
     
     try {
-      if (!validateApiKey('openai', apiKey)) {
-        return {
-          success: false,
-          error: 'Invalid OpenAI API key format. Key should start with "sk-".',
-          responseTime: Date.now() - startTime
-        };
-      }
-
       const client = axios.create(createHttpConfig(this.baseUrl));
       
-      const response = await client.post('/chat/completions', {
-        model: model,
-        messages: [{ role: 'user', content: 'test' }],
-        max_tokens: 1
-      }, {
+      // Try to get models to test connection
+      const response = await client.get('/models', {
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${testApiKey}`,
           'Content-Type': 'application/json'
         }
       });
@@ -88,19 +117,14 @@ class OpenAIProvider {
   }
 
   /**
-   * Send message to OpenAI API
+   * Send message to LM Studio API
    * @param {string} model - Model to use
    * @param {string} message - Message to send
    * @param {object} config - Configuration options
    * @returns {object} Response from API
    */
   async sendMessage(model, message, config = {}) {
-    const apiKey = process.env.OPENAI_API_KEY;
-    
-    if (!apiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
-
+    const apiKey = process.env.LMSTUDIO_API_KEY || 'lm-studio';
     const client = axios.create(createHttpConfig(this.baseUrl));
 
     const messages = [];
@@ -147,24 +171,24 @@ class OpenAIProvider {
         const data = error.response.data;
         
         if (status === 401) {
-          throw new Error('OpenAI API key is invalid or expired');
+          throw new Error('LM Studio API key is invalid');
         } else if (status === 429) {
-          throw new Error('OpenAI rate limit exceeded. Please wait and try again');
+          throw new Error('LM Studio rate limit exceeded. Please wait and try again');
         } else if (status === 400) {
-          throw new Error(data.error?.message || 'Invalid request to OpenAI API');
+          throw new Error(data.error?.message || 'Invalid request to LM Studio API');
         } else {
-          throw new Error(`OpenAI API error (${status}): ${data.error?.message || 'Unknown error'}`);
+          throw new Error(`LM Studio API error (${status}): ${data.error?.message || 'Unknown error'}`);
         }
       } else if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
-        throw new Error('Network error: Unable to connect to OpenAI API');
+        throw new Error('Network error: Unable to connect to LM Studio API. Please ensure LM Studio is running.');
       } else {
-        throw new Error(`OpenAI API error: ${error.message}`);
+        throw new Error(`LM Studio API error: ${error.message}`);
       }
     }
   }
 
   /**
-   * Stream message from OpenAI API
+   * Stream message from LM Studio API
    * @param {string} model - Model to use
    * @param {string} message - Message to send
    * @param {object} config - Configuration options
@@ -172,12 +196,7 @@ class OpenAIProvider {
    * @param {function} onComplete - Callback when complete
    */
   async streamMessage(model, message, config = {}, onChunk, onComplete) {
-    const apiKey = process.env.OPENAI_API_KEY;
-    
-    if (!apiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
-
+    const apiKey = process.env.LMSTUDIO_API_KEY || 'lm-studio';
     const client = axios.create(createHttpConfig(this.baseUrl));
 
     const messages = [];
@@ -286,21 +305,21 @@ class OpenAIProvider {
         const data = error.response.data;
         
         if (status === 401) {
-          throw new Error('OpenAI API key is invalid or expired');
+          throw new Error('LM Studio API key is invalid');
         } else if (status === 429) {
-          throw new Error('OpenAI rate limit exceeded. Please wait and try again');
+          throw new Error('LM Studio rate limit exceeded. Please wait and try again');
         } else if (status === 400) {
-          throw new Error(data.error?.message || 'Invalid request to OpenAI API');
+          throw new Error(data.error?.message || 'Invalid request to LM Studio API');
         } else {
-          throw new Error(`OpenAI API error (${status}): ${data.error?.message || 'Unknown error'}`);
+          throw new Error(`LM Studio API error (${status}): ${data.error?.message || 'Unknown error'}`);
         }
       } else if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
-        throw new Error('Network error: Unable to connect to OpenAI API');
+        throw new Error('Network error: Unable to connect to LM Studio API. Please ensure LM Studio is running.');
       } else {
-        throw new Error(`OpenAI API error: ${error.message}`);
+        throw new Error(`LM Studio API error: ${error.message}`);
       }
     }
   }
 }
 
-module.exports = new OpenAIProvider();
+module.exports = new LMStudioProvider();

@@ -608,40 +608,345 @@ async function sendMessage() {
     // Add message bubble
     addMessageBubble('user', message);
     
-    // Add typing indicator
-    const typingDiv = addMessageBubble('ai', `
-        <div class="typing_indicator">
-            <span>Processing neural patterns</span>
-            <div class="typing_dots">
-                <div class="typing_dot"></div>
-                <div class="typing_dot"></div>
-                <div class="typing_dot"></div>
-            </div>
-        </div>
-    `);
+    // Check if streaming is enabled
+    const settings = JSON.parse(localStorage.getItem('edex-settings') || '{}');
+    const useStreaming = settings.tokenRendering !== false; // Default to true if not set
     
-    // Simulate API call delay and get response
-    setTimeout(async () => {
-        // Remove typing indicator
-        typingDiv.remove();
+    if (useStreaming) {
+        // Use streaming
+        await streamMessage(message);
+    } else {
+        // Use non-streaming (existing behavior)
+        // Add typing indicator
+        const typingDiv = addMessageBubble('ai', `
+            <div class="typing_indicator">
+                <span>Processing neural patterns</span>
+                <div class="typing_dots">
+                    <div class="typing_dot"></div>
+                    <div class="typing_dot"></div>
+                    <div class="typing_dot"></div>
+                </div>
+            </div>
+        `);
         
-        // Get AI response from chatbot
-        const response = await window.chatbot.generateResponse(message);
+        // Simulate API call delay and get response
+        setTimeout(async () => {
+            // Remove typing indicator
+            typingDiv.remove();
+            
+            // Get AI response from chatbot
+            const response = await window.chatbot.generateResponse(message);
+            
+            // Add AI message to session
+            session.addMessage('ai', response);
+            
+            // Add AI response bubble
+            addMessageBubble('ai', response);
+            
+            // Update UI
+            window.sessionManager.saveSessions();
+            renderSessions();
+            updateStats();
+            
+            // Focus input
+            chatInput.focus();
+        }, 1000 + Math.random() * 2000);
+    }
+}
+
+// Stream message handler
+async function streamMessage(message) {
+    // Get current provider and model from settings
+    const modelSelector = document.getElementById("model_selector");
+    const selectedValue = modelSelector.value;
+    
+    // Parse provider and model from selection (format: "provider-model")
+    let provider = 'openai';
+    let model = 'gpt-4o';
+    
+    if (selectedValue && selectedValue.includes('-')) {
+        const parts = selectedValue.split('-');
+        provider = parts[0];
+        model = parts.slice(1).join('-');
+    }
+    
+    // Get settings
+    const settings = JSON.parse(localStorage.getItem('edex-settings') || '{}');
+    
+    // Add typing indicator that will be updated with streaming content
+    const aiMessageDiv = addMessageBubble('ai', '');
+    const messageContent = document.createElement('div');
+    messageContent.className = 'message_bubble markdown-content streaming-content';
+    messageContent.innerHTML = '<div class="typing_indicator"><span>Processing neural patterns</span><div class="typing_dots"><div class="typing_dot"></div><div class="typing_dot"></div><div class="typing_dot"></div></div></div>';
+    aiMessageDiv.innerHTML = '';
+    aiMessageDiv.appendChild(messageContent);
+    
+    // Add stop button
+    const stopButton = document.createElement('button');
+    stopButton.className = 'stop-button neon_button';
+    stopButton.innerHTML = '⏹ STOP';
+    stopButton.style.cssText = `
+        position: absolute;
+        right: 10px;
+        top: 10px;
+        padding: 5px 10px;
+        font-size: 12px;
+        z-index: 100;
+    `;
+    aiMessageDiv.appendChild(stopButton);
+    
+    const timeDiv = aiMessageDiv.querySelector('.message_time');
+    if (timeDiv) {
+        aiMessageDiv.appendChild(timeDiv); // Move time to end
+    }
+    
+    // Get chat feed and scroll to bottom
+    const chatFeed = document.getElementById("chat_feed");
+    chatFeed.scrollTop = chatFeed.scrollHeight;
+    
+    // Build backend URL - Fixed to handle Electron environment properly
+    let backendUrl;
+    const hostname = window.location.hostname;
+    if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1') {
+        // For Electron apps and localhost development
+        backendUrl = 'http://localhost:3001';
+    } else {
+        // For deployed web applications
+        backendUrl = `https://${hostname.replace(/:\d+$/, '')}:3001`;
+    }
+    
+    // Create AbortController for cancellation
+    const controller = new AbortController();
+    const { signal } = controller;
+    
+    let accumulatedContent = '';
+    let messageBubble = messageContent;
+    let isStreaming = true;
+    
+    // Stop button handler
+    stopButton.addEventListener('click', () => {
+        if (isStreaming) {
+            isStreaming = false;
+            controller.abort(); // Abort the fetch request
+            stopButton.disabled = true;
+            stopButton.innerHTML = 'STOPPED';
+            
+            // Add a note that streaming was stopped
+            if (!accumulatedContent.endsWith('\n\n[Streaming stopped by user]')) {
+                accumulatedContent += '\n\n[Streaming stopped by user]';
+                if (!window.markdownRenderer) {
+                    window.markdownRenderer = new MarkdownRenderer();
+                }
+                messageBubble.innerHTML = window.markdownRenderer.render(accumulatedContent);
+            }
+            
+            // Add final message to session
+            const session = window.sessionManager.currentSession;
+            session.addMessage('ai', accumulatedContent);
+            
+            // Update UI
+            window.sessionManager.saveSessions();
+            renderSessions();
+            updateStats();
+            
+            // Focus input
+            document.getElementById("chat_input").focus();
+        }
+    });
+    
+    try {
+        // Make streaming request using fetch with ReadableStream
+        const response = await fetch(`${backendUrl}/api/chat/stream?` + new URLSearchParams({
+            message: message,
+            provider: provider,
+            model: model,
+            config: JSON.stringify({
+                temperature: settings.temperature || 0.7,
+                maxTokens: settings.maxTokens || 2048,
+                topP: settings.topP || 1.0,
+                systemPrompt: settings.systemPrompt
+            })
+        }), {
+            method: 'GET',
+            headers: {
+                'Accept': 'text/event-stream'
+            },
+            signal // Attach abort signal
+        });
         
-        // Add AI message to session
-        session.addMessage('ai', response);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
-        // Add AI response bubble
-        addMessageBubble('ai', response);
+        if (!response.body) {
+            throw new Error('ReadableStream not supported');
+        }
         
-        // Update UI
-        window.sessionManager.saveSessions();
-        renderSessions();
-        updateStats();
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
         
-        // Focus input
-        chatInput.focus();
-    }, 1000 + Math.random() * 2000);
+        while (isStreaming) {
+            const { done, value } = await reader.read();
+            
+            if (done) {
+                if (isStreaming) {
+                    isStreaming = false;
+                    stopButton.disabled = true;
+                    stopButton.innerHTML = 'DONE';
+                    
+                    // Add final message to session
+                    const session = window.sessionManager.currentSession;
+                    session.addMessage('ai', accumulatedContent);
+                    
+                    // Update UI
+                    window.sessionManager.saveSessions();
+                    renderSessions();
+                    updateStats();
+                    
+                    // Focus input
+                    document.getElementById("chat_input").focus();
+                }
+                break;
+            }
+            
+            buffer += decoder.decode(value, { stream: true });
+            
+            // Process complete lines
+            let lines = buffer.split('\n');
+            buffer = lines.pop(); // Keep incomplete line in buffer
+            
+            for (const line of lines) {
+                if (line.trim() === '') continue;
+                
+                try {
+                    if (line.startsWith('data: ')) {
+                        const data = JSON.parse(line.slice(6)); // Remove 'data: ' prefix
+                        
+                        // Check if streaming is complete
+                        if (data.done === true) {
+                            if (isStreaming) {
+                                isStreaming = false;
+                                stopButton.disabled = true;
+                                stopButton.innerHTML = 'DONE';
+                                
+                                // Add final message to session
+                                const session = window.sessionManager.currentSession;
+                                session.addMessage('ai', accumulatedContent);
+                                
+                                // Update UI
+                                window.sessionManager.saveSessions();
+                                renderSessions();
+                                updateStats();
+                                
+                                // Focus input
+                                document.getElementById("chat_input").focus();
+                            }
+                            break;
+                        }
+                        
+                        // Handle error
+                        if (data.error) {
+                            if (isStreaming) {
+                                isStreaming = false;
+                                stopButton.disabled = true;
+                                stopButton.innerHTML = 'ERROR';
+                                messageBubble.innerHTML = `<div class="error-message">Error: ${data.error}</div>`;
+                                // Add error to session for history
+                                const session = window.sessionManager.currentSession;
+                                session.addMessage('error', `Error: ${data.error}`);
+                            }
+                            break;
+                        }
+                        
+                        // Add content to accumulated content
+                        if (data.content && isStreaming) {
+                            accumulatedContent += data.content;
+                            
+                            // If this is the first chunk, replace typing indicator
+                            if (messageBubble.innerHTML.includes('typing_indicator')) {
+                                messageBubble.innerHTML = '';
+                            }
+                            
+                            // Update message bubble with accumulated content
+                            if (!window.markdownRenderer) {
+                                window.markdownRenderer = new MarkdownRenderer();
+                            }
+                            
+                            // Render markdown content
+                            messageBubble.innerHTML = window.markdownRenderer.render(accumulatedContent);
+                            
+                            // Scroll to bottom
+                            chatFeed.scrollTop = chatFeed.scrollHeight;
+                        }
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing stream data:', parseError);
+                    // Continue processing other lines
+                }
+            }
+        }
+        
+        // Clean up
+        reader.releaseLock();
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            // Request was cancelled by user
+            if (isStreaming) {
+                isStreaming = false;
+                stopButton.disabled = true;
+                stopButton.innerHTML = 'STOPPED';
+                
+                // Add a note that streaming was stopped
+                if (!accumulatedContent.endsWith('\n\n[Streaming stopped by user]')) {
+                    accumulatedContent += '\n\n[Streaming stopped by user]';
+                    if (!window.markdownRenderer) {
+                        window.markdownRenderer = new MarkdownRenderer();
+                    }
+                    messageBubble.innerHTML = window.markdownRenderer.render(accumulatedContent);
+                }
+                
+                // Add final message to session
+                const session = window.sessionManager.currentSession;
+                session.addMessage('ai', accumulatedContent);
+                
+                // Update UI
+                window.sessionManager.saveSessions();
+                renderSessions();
+                updateStats();
+            }
+        } else {
+            console.error('Stream error:', error);
+            if (isStreaming) {
+                isStreaming = false;
+                stopButton.disabled = true;
+                stopButton.innerHTML = 'ERROR';
+                if (messageBubble.innerHTML.includes('typing_indicator')) {
+                    messageBubble.innerHTML = `<div class="error-message">Connection error: ${error.message}. Please try again.</div>`;
+                } else {
+                    // Add error message to the end
+                    messageBubble.innerHTML += `<div class="error-message"><br>Connection error: ${error.message}. Please try again.</div>`;
+                }
+                // Add error to session for history
+                const session = window.sessionManager.currentSession;
+                session.addMessage('error', `Connection error: ${error.message}. Please try again.`);
+            }
+        }
+    }
+    
+    // Add a timeout to handle cases where the stream doesn't start
+    setTimeout(() => {
+        if (isStreaming && messageBubble.innerHTML.includes('typing_indicator')) {
+            isStreaming = false;
+            controller.abort(); // Abort the fetch request
+            stopButton.disabled = true;
+            stopButton.innerHTML = 'TIMEOUT';
+            messageBubble.innerHTML = '<div class="error-message">Request timeout. Please try again.</div>';
+            // Add error to session for history
+            const session = window.sessionManager.currentSession;
+            session.addMessage('error', 'Request timeout. Please try again.');
+        }
+    }, 30000); // 30 second timeout
 }
 
 // Update status and stats
@@ -818,6 +1123,10 @@ function exportChatHistory() {
 
 // Settings modal
 function openSettingsModal() {
+    // Load current settings
+    const currentSettings = JSON.parse(localStorage.getItem('edex-settings') || '{}');
+    const tokenRendering = currentSettings.tokenRendering !== false; // Default to true
+    
     const modal = document.createElement('div');
     modal.className = 'settings-modal';
     modal.style.cssText = `
@@ -871,6 +1180,9 @@ function openSettingsModal() {
                 <div class="setting-group" style="margin-bottom: 2vh;">
                     <label><input type="checkbox" id="sounds_enabled" checked style="margin-right: 1vh;"> Sound Effects</label>
                 </div>
+                <div class="setting-group" style="margin-bottom: 2vh;">
+                    <label><input type="checkbox" id="token_rendering" ${tokenRendering ? 'checked' : ''} style="margin-right: 1vh;"> Token-by-Token Rendering (Streaming)</label>
+                </div>
             </div>
             <div class="modal-actions" style="display: flex; gap: 1vh; margin-top: 2vh;">
                 <button class="neon_button" id="save_settings" style="flex: 1;">SAVE</button>
@@ -914,7 +1226,8 @@ function saveSettings(modal) {
         color_b: modal.querySelector('#color_b').value,
         font_size: modal.querySelector('#font_size').value,
         animations_enabled: modal.querySelector('#animations_enabled').checked,
-        sounds_enabled: modal.querySelector('#sounds_enabled').checked
+        sounds_enabled: modal.querySelector('#sounds_enabled').checked,
+        tokenRendering: modal.querySelector('#token_rendering').checked
     };
     
     localStorage.setItem('edex_settings', JSON.stringify(settings));
@@ -1018,6 +1331,12 @@ class APISettingsManager {
                 keyPrefix: 'gsk_',
                 models: ['llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768'],
                 endpoint: 'https://api.groq.com/openai/v1/chat/completions'
+            },
+            lmstudio: {
+                name: 'LM Studio',
+                keyPrefix: 'lm-studio',
+                models: ['lmstudio-community/Meta-Llama-3-8B-Instruct', 'TheBloke/Mistral-7B-Instruct-v0.2-GGUF', 'lmstudio-community/Phi-3-mini-4k-instruct'],
+                endpoint: 'http://localhost:1234/v1/chat/completions'
             }
         };
         
@@ -1094,6 +1413,30 @@ class APISettingsManager {
             });
         }
 
+        // Temperature slider for LM Studio
+        const lmstudioTempSlider = document.getElementById('lmstudio_temperature');
+        const lmstudioTempValue = document.getElementById('lmstudio_temp_value');
+        if (lmstudioTempSlider && lmstudioTempValue) {
+            lmstudioTempSlider.addEventListener('input', (e) => {
+                lmstudioTempValue.textContent = e.target.value;
+            });
+        }
+
+        // Custom model handling for LM Studio
+        const lmstudioModelSelect = document.getElementById('lmstudio_model_select');
+        const lmstudioCustomModelGroup = document.getElementById('lmstudio_custom_model_group');
+        const lmstudioCustomModelInput = document.getElementById('lmstudio_custom_model');
+        
+        if (lmstudioModelSelect && lmstudioCustomModelGroup) {
+            lmstudioModelSelect.addEventListener('change', (e) => {
+                if (e.target.value === '__custom__') {
+                    lmstudioCustomModelGroup.style.display = 'block';
+                } else {
+                    lmstudioCustomModelGroup.style.display = 'none';
+                }
+            });
+        }
+
         // Form validation on input
         const apiKeyInputs = document.querySelectorAll('input[id$="_api_key"]');
         apiKeyInputs.forEach(input => {
@@ -1150,6 +1493,20 @@ class APISettingsManager {
             return false;
         }
 
+        // Special handling for LM Studio
+        if (provider === 'lmstudio') {
+            // LM Studio accepts "lm-studio" or empty as valid
+            if (key === 'lm-studio' || key === '') {
+                validationMsg.textContent = 'Valid format ✓';
+                validationMsg.className = 'validation-message success';
+                return true;
+            }
+            // For other values, we don't validate strictly
+            validationMsg.textContent = 'Custom key accepted';
+            validationMsg.className = 'validation-message success';
+            return true;
+        }
+
         const expectedPrefix = this.providers[provider]?.keyPrefix;
         if (expectedPrefix && !key.startsWith(expectedPrefix)) {
             validationMsg.textContent = `Invalid format. Expected format: ${expectedPrefix}...`;
@@ -1198,6 +1555,26 @@ class APISettingsManager {
     }
 
     async performConnectionTest(provider, config) {
+        // Special handling for LM Studio
+        if (provider === 'lmstudio') {
+            try {
+                // For LM Studio, we'll just check if the URL is accessible
+                const baseUrl = config.baseUrl || 'http://localhost:1234/v1';
+                const response = await fetch(`${baseUrl}/models`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${config.apiKey || 'lm-studio'}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                return response.ok;
+            } catch (error) {
+                console.warn('LM Studio connection test failed:', error);
+                return false;
+            }
+        }
+        
         // Simulate API test - In a real implementation, you'd make actual API calls
         return new Promise((resolve) => {
             setTimeout(() => {
@@ -1223,6 +1600,20 @@ class APISettingsManager {
             config.maxTokens = parseInt(document.getElementById('openai_max_tokens')?.value || 2048);
         } else if (provider === 'anthropic') {
             config.maxTokens = parseInt(document.getElementById('anthropic_max_tokens')?.value || 4096);
+        } else if (provider === 'lmstudio') {
+            config.baseUrl = document.getElementById('lmstudio_base_url')?.value.trim() || 'http://localhost:1234/v1';
+            
+            // Handle custom model selection
+            const modelSelect = document.getElementById('lmstudio_model_select');
+            if (modelSelect?.value === '__custom__') {
+                config.model = document.getElementById('lmstudio_custom_model')?.value.trim() || 
+                              'lmstudio-community/Meta-Llama-3-8B-Instruct';
+            } else {
+                config.model = modelSelect?.value || 'lmstudio-community/Meta-Llama-3-8B-Instruct';
+            }
+            
+            config.temperature = parseFloat(document.getElementById('lmstudio_temperature')?.value || 0.7);
+            config.maxTokens = parseInt(document.getElementById('lmstudio_max_tokens')?.value || 2048);
         }
 
         return config;
@@ -1291,6 +1682,46 @@ class APISettingsManager {
                 } else if (provider === 'anthropic' && config.maxTokens) {
                     const tokensInput = document.getElementById('anthropic_max_tokens');
                     if (tokensInput) tokensInput.value = config.maxTokens;
+                } else if (provider === 'lmstudio') {
+                    if (config.baseUrl) {
+                        const baseUrlInput = document.getElementById('lmstudio_base_url');
+                        if (baseUrlInput) baseUrlInput.value = config.baseUrl;
+                    }
+                    
+                    // Handle custom model loading
+                    const modelSelect = document.getElementById('lmstudio_model_select');
+                    const customModelGroup = document.getElementById('lmstudio_custom_model_group');
+                    const customModelInput = document.getElementById('lmstudio_custom_model');
+                    
+                    if (config.model) {
+                        // Check if the model is in the standard list
+                        const standardModels = ['lmstudio-community/Meta-Llama-3-8B-Instruct', 
+                                              'TheBloke/Mistral-7B-Instruct-v0.2-GGUF', 
+                                              'lmstudio-community/Phi-3-mini-4k-instruct'];
+                        
+                        if (standardModels.includes(config.model)) {
+                            if (modelSelect) modelSelect.value = config.model;
+                            if (customModelGroup) customModelGroup.style.display = 'none';
+                        } else {
+                            // It's a custom model
+                            if (modelSelect) modelSelect.value = '__custom__';
+                            if (customModelGroup) customModelGroup.style.display = 'block';
+                            if (customModelInput) customModelInput.value = config.model;
+                        }
+                    }
+                    
+                    if (config.temperature !== undefined) {
+                        const tempSlider = document.getElementById('lmstudio_temperature');
+                        const tempValue = document.getElementById('lmstudio_temp_value');
+                        if (tempSlider) {
+                            tempSlider.value = config.temperature;
+                            if (tempValue) tempValue.textContent = config.temperature;
+                        }
+                    }
+                    if (config.maxTokens) {
+                        const tokensInput = document.getElementById('lmstudio_max_tokens');
+                        if (tokensInput) tokensInput.value = config.maxTokens;
+                    }
                 }
             });
             
@@ -1302,7 +1733,7 @@ class APISettingsManager {
     }
 
     updateMainModelSelector() {
-        const currentProvider = localStorage.getItem('edx_current_provider') || 'openai';
+        const currentProvider = localStorage.getItem('edex_current_provider') || 'openai';
         const configs = JSON.parse(localStorage.getItem('edex_api_configs') || '{}');
         
         if (configs[currentProvider]) {
@@ -1312,13 +1743,21 @@ class APISettingsManager {
                 const providerName = this.providers[currentProvider].name;
                 const model = configs[currentProvider].model;
                 
-                // Add option if it doesn't exist
+                // For LM Studio, we want to show the actual model name
+                let displayName = model;
+                if (currentProvider === 'lmstudio') {
+                    // Extract just the model name part after the last slash
+                    const parts = model.split('/');
+                    displayName = parts[parts.length - 1] || model;
+                }
+                
+                // Check if option already exists
                 let option = Array.from(modelSelector.options).find(opt => 
                     opt.value === `${currentProvider}-${model}`
                 );
                 
                 if (!option) {
-                    option = new Option(`${providerName} - ${model}`, `${currentProvider}-${model}`);
+                    option = new Option(`${providerName} - ${displayName}`, `${currentProvider}-${model}`);
                     modelSelector.appendChild(option);
                 }
                 

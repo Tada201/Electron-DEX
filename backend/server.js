@@ -9,6 +9,7 @@ require('dotenv').config();
 const providerRoutes = require('./routes/providers');
 const chatRoutes = require('./routes/chat');
 const configRoutes = require('./routes/config');
+const lmstudioRoutes = require('./routes/lmstudio');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -55,6 +56,7 @@ app.use('/api/', rateLimitMiddleware);
 app.use('/api/providers', providerRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/config', configRoutes);
+app.use('/api/lmstudio', lmstudioRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

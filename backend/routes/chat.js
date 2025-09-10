@@ -9,10 +9,10 @@ const googleProvider = require('../providers/google');
 const mistralProvider = require('../providers/mistral');
 const groqProvider = require('../providers/groq');
 const xaiProvider = require('../providers/xai');
+const lmstudioProvider = require('../providers/lmstudio');
 
 const { sanitizeInput, formatErrorForUser, validateConfig } = require('../utils/helpers');
 
-// Provider map
 const providers = {
   openai: openaiProvider,
   anthropic: anthropicProvider,
@@ -20,96 +20,149 @@ const providers = {
   mistral: mistralProvider,
   groq: groqProvider,
   xai: xaiProvider,
+  lmstudio: lmstudioProvider,
 };
 
-// Send message to LLM
-router.post('/send', async (req, res) => {
-  try {
-    const {
-      message,
-      provider = 'openai',
-      model = 'gpt-4o',
-      config = {}
-    } = req.body;
+// Stream message to LLM (new streaming endpoint)
+router.get('/stream', async (req, res) => {
+  const {
+    message,
+    provider = 'openai',
+    model = 'gpt-4o',
+    config = '{}'
+  } = req.query;
 
-    console.log(`📤 Chat request: ${provider}/${model}`);
+  // Set SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.flushHeaders();
+
+  try {
+    // Parse config
+    const parsedConfig = typeof config === 'string' ? JSON.parse(config) : config;
 
     // Validate input
     if (!message || typeof message !== 'string') {
-      return res.status(400).json({
-        error: 'Invalid input',
-        message: 'Message is required and must be a string'
-      });
+      res.write(`data: ${JSON.stringify({ error: 'Invalid input', message: 'Message is required and must be a string' })}\n\n`);
+      return res.end();
     }
 
     // Sanitize input
     const cleanMessage = sanitizeInput(message);
     if (!cleanMessage) {
-      return res.status(400).json({
-        error: 'Invalid input',
-        message: 'Message cannot be empty'
-      });
+      res.write(`data: ${JSON.stringify({ error: 'Invalid input', message: 'Message cannot be empty' })}\n\n`);
+      return res.end();
     }
 
     // Validate provider
     if (!providers[provider]) {
-      return res.status(400).json({
+      res.write(`data: ${JSON.stringify({
         error: 'Invalid provider',
         message: `Provider '${provider}' is not supported`,
         availableProviders: Object.keys(providers)
-      });
+      })}\n\n`);
+      return res.end();
     }
 
     // Validate configuration
-    const configValidation = validateConfig(config);
+    const configValidation = validateConfig(parsedConfig);
     if (!configValidation.isValid) {
-      return res.status(400).json({
+      res.write(`data: ${JSON.stringify({
         error: 'Invalid configuration',
         message: 'Configuration validation failed',
         errors: configValidation.errors
-      });
+      })}\n\n`);
+      return res.end();
     }
 
     // Generate conversation ID
     const conversationId = uuidv4();
-
-    // Send message to provider
     const startTime = Date.now();
-    const response = await providers[provider].sendMessage(model, cleanMessage, {
-      ...config,
-      conversationId,
-      userId: req.ip, // Simple user identification
-    });
 
-    const duration = Date.now() - startTime;
-
-    console.log(`✅ Response received in ${duration}ms from ${provider}/${model}`);
-
-    // Return successful response
-    res.json({
-      success: true,
-      response: response.content,
-      provider,
-      model,
-      conversationId,
-      usage: response.usage || null,
-      responseTime: duration,
-      timestamp: new Date().toISOString()
-    });
-
+    // Check if provider supports streaming
+    if (providers[provider].supportsStreaming && providers[provider].supportsStreaming()) {
+      // Use native streaming for providers that support it
+      await providers[provider].streamMessage(model, cleanMessage, {
+        ...parsedConfig,
+        conversationId,
+        userId: req.ip,
+      }, (chunk) => {
+        // Check if client is still connected before sending
+        if (!res.closed) {
+          res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+        }
+      }, () => {
+        // Check if client is still connected before sending completion
+        if (!res.closed) {
+          res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+          res.end();
+        }
+      });
+    } else {
+      // Simulate streaming for non-streaming providers
+      try {
+        const response = await providers[provider].sendMessage(model, cleanMessage, {
+          ...parsedConfig,
+          conversationId,
+          userId: req.ip,
+        });
+        
+        // Split response into tokens (words for simulation)
+        const tokens = response.content.split(/(\s+)/).filter(token => token.trim() !== '');
+        
+        // Send tokens with delay to simulate streaming
+        for (let i = 0; i < tokens.length; i++) {
+          // Check if client is still connected
+          if (res.closed) {
+            break;
+          }
+          
+          // Send token
+          res.write(`data: ${JSON.stringify({
+            content: tokens[i],
+            provider,
+            model,
+            conversationId,
+            usage: response.usage,
+            finishReason: response.finishReason,
+          })}\n\n`);
+          
+          // Small delay between tokens (adjust as needed)
+          await new Promise(resolve => setTimeout(resolve, 20));
+        }
+        
+        // Send completion signal if client is still connected
+        if (!res.closed) {
+          res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+          res.end();
+        }
+      } catch (providerError) {
+        // Handle provider-specific errors
+        if (!res.closed) {
+          res.write(`data: ${JSON.stringify({
+            error: formatErrorForUser(providerError),
+            provider,
+            model,
+            timestamp: new Date().toISOString()
+          })}\n\n`);
+          res.end();
+        }
+      }
+    }
   } catch (error) {
-    console.error('❌ Chat error:', error);
-    
-    const userError = formatErrorForUser(error);
-    const statusCode = error.status || 500;
-    
-    res.status(statusCode).json({
-      success: false,
-      error: userError,
-      provider: req.body.provider || 'unknown',
-      model: req.body.model || 'unknown',
-      timestamp: new Date().toISOString()
-    });
+    console.error('❌ Stream error:', error);
+    // Only send error if client is still connected
+    if (!res.closed) {
+      res.write(`data: ${JSON.stringify({
+        error: formatErrorForUser(error),
+        provider: req.query.provider || 'unknown',
+        model: req.query.model || 'unknown',
+        timestamp: new Date().toISOString()
+      })}\n\n`);
+      res.end();
+    }
   }
 });
 

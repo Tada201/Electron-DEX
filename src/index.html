@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' http://localhost:3001 http://localhost:1234; font-src 'self' data:;">
         <title>eDEX Chatbot</title>
 
         <!-- Load main css -->
@@ -211,6 +212,10 @@
                             <div class="provider-icon">🚀</div>
                             <span class="provider-name">xAI</span>
                         </div>
+                        <div class="provider-tab" data-provider="lmstudio">
+                            <div class="provider-icon">💻</div>
+                            <span class="provider-name">LM Studio</span>
+                        </div>
                         <div class="provider-tab coming-soon">
                             <div class="provider-icon">⏰</div>
                             <span class="provider-name">Coming Soon</span>
@@ -408,6 +413,56 @@
                                     <option value="grok-2">Grok 2</option>
                                     <option value="grok-2-mini">Grok 2 Mini</option>
                                 </select>
+                            </div>
+                        </div>
+
+                        <!-- LM Studio Configuration -->
+                        <div class="config-panel" data-provider="lmstudio">
+                            <div class="config-header">
+                                <h3>LM Studio Configuration</h3>
+                                <div class="provider-info">
+                                    <p>Configure connection to local LM Studio server</p>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="lmstudio_api_key"><span class="field-icon">🔐</span> API Key (optional)</label>
+                                <div class="input-container">
+                                    <input type="password" id="lmstudio_api_key" placeholder="lm-studio" value="lm-studio" class="form-input">
+                                    <button type="button" class="toggle-visibility" data-target="lmstudio_api_key">👁</button>
+                                </div>
+                                <div class="validation-message"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="lmstudio_base_url"><span class="field-icon">🌐</span> Base URL</label>
+                                <input type="text" id="lmstudio_base_url" placeholder="http://localhost:1234/v1" value="http://localhost:1234/v1" class="form-input">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="lmstudio_model_select"><span class="field-icon">🎛</span> Model</label>
+                                <select id="lmstudio_model_select" class="form-select">
+                                    <option value="lmstudio-community/Meta-Llama-3-8B-Instruct">Meta-Llama-3-8B-Instruct</option>
+                                    <option value="TheBloke/Mistral-7B-Instruct-v0.2-GGUF">Mistral-7B-Instruct-v0.2</option>
+                                    <option value="lmstudio-community/Phi-3-mini-4k-instruct">Phi-3-mini-4k-instruct</option>
+                                    <option value="__custom__">-- Custom Model --</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" id="lmstudio_custom_model_group" style="display: none;">
+                                <label for="lmstudio_custom_model"><span class="field-icon">✏️</span> Custom Model ID</label>
+                                <input type="text" id="lmstudio_custom_model" placeholder="Enter custom model ID (e.g., liquid/lfm2-1.2b)" class="form-input">
+                                <div class="help-text">Enter the exact model ID as it appears in LM Studio</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="lmstudio_temperature"><span class="field-icon">🌡</span> Temperature: <span id="lmstudio_temp_value">0.7</span></label>
+                                <input type="range" id="lmstudio_temperature" min="0" max="1" step="0.1" value="0.7" class="form-slider">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="lmstudio_max_tokens"><span class="field-icon">💾</span> Max Tokens</label>
+                                <input type="number" id="lmstudio_max_tokens" min="256" max="32000" value="2048" class="form-input">
                             </div>
                         </div>
                     </div>

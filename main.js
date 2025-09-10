@@ -1,8 +1,27 @@
 const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
+const { spawn } = require('child_process');
 
 // Keep a global reference of the window object
 let mainWindow;
+let backendProcess;
+
+function startBackendServer() {
+  // Start the backend server as a separate process
+  const backendPath = path.join(__dirname, 'backend');
+  backendProcess = spawn('node', ['server.js'], {
+    cwd: backendPath,
+    stdio: 'inherit'
+  });
+
+  backendProcess.on('error', (error) => {
+    console.error('Failed to start backend server:', error);
+  });
+
+  backendProcess.on('close', (code) => {
+    console.log(`Backend server process exited with code ${code}`);
+  });
+}
 
 function createWindow() {
   // Create the browser window
@@ -56,6 +75,9 @@ function createWindow() {
 
 // This method will be called when Electron has finished initialization
 app.whenReady().then(() => {
+  // Start the backend server before creating the window
+  startBackendServer();
+  
   createWindow();
 
   // On macOS, re-create window when dock icon is clicked
@@ -68,6 +90,11 @@ app.whenReady().then(() => {
 
 // Quit when all windows are closed, except on macOS
 app.on('window-all-closed', () => {
+  // Kill the backend process when the app closes
+  if (backendProcess) {
+    backendProcess.kill();
+  }
+  
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -185,4 +212,3 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
-

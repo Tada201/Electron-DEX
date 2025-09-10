@@ -8,6 +8,7 @@ const googleProvider = require('../providers/google');
 const mistralProvider = require('../providers/mistral');
 const groqProvider = require('../providers/groq');
 const xaiProvider = require('../providers/xai');
+const lmstudioProvider = require('../providers/lmstudio');
 
 // Provider map
 const providers = {
@@ -17,6 +18,7 @@ const providers = {
   mistral: mistralProvider,
   groq: groqProvider,
   xai: xaiProvider,
+  lmstudio: lmstudioProvider
 };
 
 // Get list of available providers

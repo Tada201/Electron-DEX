@@ -4,10 +4,12 @@
   "main": "main.js",
   "homepage": "./src/index.html",
   "scripts": {
-    "start": "electron .",
+    "start": "electron .&& cd backend && npm run dev",
     "dev": "NODE_ENV=development electron .",
     "build": "electron-builder",
     "dist": "electron-builder --publish=never",
+    "postinstall": "cd backend && npm install",
+    "backend-dev": "cd backend && npm run dev",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -33,4 +35,3 @@
     "electron": "^38.0.0"
   }
 }
-

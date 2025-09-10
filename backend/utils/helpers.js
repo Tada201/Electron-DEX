@@ -65,10 +65,15 @@ function validateApiKey(provider, apiKey) {
     google: /^AIza[A-Za-z0-9-_]{35}$/,
     mistral: /^[A-Za-z0-9]{32,}$/,
     groq: /^gsk_[A-Za-z0-9]{52}$/,
-    xai: /^xai-[A-Za-z0-9-_]{32,}$/
+    xai: /^xai-[A-Za-z0-9-_]{32,}$/,
+    lmstudio: /^lm-studio$|^$/
   };
   
   const pattern = patterns[provider.toLowerCase()];
+  // For LM Studio, we accept "lm-studio" or empty string as valid
+  if (provider.toLowerCase() === 'lmstudio') {
+    return !apiKey || apiKey === 'lm-studio';
+  }
   return pattern ? pattern.test(apiKey) : apiKey.length >= 10;
 }
 

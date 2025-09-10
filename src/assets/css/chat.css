@@ -60,3 +60,37 @@
         transform: translateY(0);
     }
 }
+
+/* Stop button for streaming */
+.stop-button {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    padding: 5px 10px;
+    font-size: 12px;
+    z-index: 100;
+    background: transparent;
+    border: 1px solid rgba(var(--color_r), var(--color_g), var(--color_b), 0.7);
+    color: rgb(var(--color_r), var(--color_g), var(--color_b));
+    cursor: pointer;
+    font-family: var(--font_mono), monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stop-button:hover {
+    background: rgba(var(--color_r), var(--color_g), var(--color_b), 0.2);
+    box-shadow: 0 0 5px rgba(var(--color_r), var(--color_g), var(--color_b), 0.5);
+}
+
+.stop-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Error message styling */
+.error-message {
+    color: #ff5555;
+    font-style: italic;
+    margin: 5px 0;
+}
