@@ -7,7 +7,8 @@ class GoogleProvider {
     this.name = 'google';
     this.displayName = 'Google Gemini';
     this.description = 'Google Gemini models including Gemini 1.5 Pro and Flash';
-    this.baseUrl = process.env.GOOGLE_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta';
+    this.baseUrl = process.env.GOOGLE_BASE_URL || 'https://generativelanguage.googleapis.com';
+    this.apiVersion = 'v1beta';
     this.requiresApiKey = true;
     this.documentationUrl = 'https://ai.google.dev/docs';
   }
@@ -26,13 +27,14 @@ class GoogleProvider {
 
   getAvailableModels() {
     return [
-      { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', contextLength: 2000000, multimodal: true },
-      { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', contextLength: 1000000, multimodal: true },
+      { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash', contextLength: 1000000, multimodal: true },
+      { id: 'gemini-1.5-pro-latest', name: 'Gemini 1.5 Pro', contextLength: 2000000, multimodal: true },
+      { id: 'gemini-1.5-flash-latest', name: 'Gemini 1.5 Flash', contextLength: 1000000, multimodal: true },
       { id: 'gemini-1.0-pro', name: 'Gemini 1.0 Pro', contextLength: 30720, multimodal: false }
     ];
   }
 
-  async testConnection(apiKey, model = 'gemini-1.5-flash') {
+  async testConnection(apiKey, model = 'gemini-2.0-flash-exp') {
     const startTime = Date.now();
     
     try {
@@ -45,8 +47,8 @@ class GoogleProvider {
       }
 
       const client = axios.create(createHttpConfig(this.baseUrl));
-      
-      const response = await client.post(`/models/${model}:generateContent?key=${apiKey}`, {
+
+      const response = await client.post(`/${this.apiVersion}/models/${model}:generateContent?key=${apiKey}`, {
         contents: [{ role: 'user', parts: [{ text: 'test' }] }],
         generationConfig: { maxOutputTokens: 1 }
       });
@@ -66,8 +68,8 @@ class GoogleProvider {
   }
 
   async sendMessage(model, message, config = {}) {
-    const apiKey = process.env.GOOGLE_API_KEY;
-    
+    const apiKey = config.apiKey || process.env.GOOGLE_API_KEY;
+
     if (!apiKey) {
       throw new Error('Google API key not configured');
     }
@@ -84,7 +86,7 @@ class GoogleProvider {
     };
 
     try {
-      const response = await client.post(`/models/${model}:generateContent?key=${apiKey}`, requestData);
+      const response = await client.post(`/${this.apiVersion}/models/${model}:generateContent?key=${apiKey}`, requestData);
 
       const candidate = response.data.candidates[0];
       
@@ -129,8 +131,8 @@ class GoogleProvider {
    * @param {function} onComplete - Callback when complete
    */
   async streamMessage(model, message, config = {}, onChunk, onComplete) {
-    const apiKey = process.env.GOOGLE_API_KEY;
-    
+    const apiKey = config.apiKey || process.env.GOOGLE_API_KEY;
+
     if (!apiKey) {
       throw new Error('Google API key not configured');
     }
@@ -147,7 +149,7 @@ class GoogleProvider {
     };
 
     try {
-      const response = await client.post(`/models/${model}:streamGenerateContent?key=${apiKey}`, requestData, {
+      const response = await client.post(`/${this.apiVersion}/models/${model}:streamGenerateContent?key=${apiKey}`, requestData, {
         responseType: 'stream'
       });
 

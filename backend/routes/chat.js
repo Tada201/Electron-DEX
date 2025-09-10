@@ -81,6 +81,9 @@ router.get('/stream', async (req, res) => {
     const conversationId = uuidv4();
     const startTime = Date.now();
 
+    // Extract API key from config if provided
+    const apiKey = parsedConfig.apiKey;
+
     // Check if provider supports streaming
     if (providers[provider].supportsStreaming && providers[provider].supportsStreaming()) {
       // Use native streaming for providers that support it
@@ -88,6 +91,7 @@ router.get('/stream', async (req, res) => {
         ...parsedConfig,
         conversationId,
         userId: req.ip,
+        apiKey, // Pass API key to provider
       }, (chunk) => {
         // Check if client is still connected before sending
         if (!res.closed) {
@@ -107,6 +111,7 @@ router.get('/stream', async (req, res) => {
           ...parsedConfig,
           conversationId,
           userId: req.ip,
+          apiKey, // Pass API key to provider
         });
         
         // Split response into tokens (words for simulation)

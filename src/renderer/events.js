@@ -59,6 +59,12 @@ export function setupEventListeners() {
         themeToggle.addEventListener("click", toggleTheme);
     }
     
+    // LM Studio test connection button
+    const lmstudioTestButton = document.getElementById("lmstudio_test_connection");
+    if (lmstudioTestButton) {
+        lmstudioTestButton.addEventListener("click", handleLMStudioTestConnection);
+    }
+    
     // File upload functionality
     const fileUploadBtn = document.getElementById("file_upload_btn");
     const fileInput = document.getElementById("file_input");
@@ -227,6 +233,69 @@ function handleChatInputKeydown(event) {
             chatInput.style.height = Math.min(scrollHeight, 200) + 'px';
         }
     }, 0);
+}
+
+// Handle LM Studio test connection
+async function handleLMStudioTestConnection() {
+    const testButton = document.getElementById("lmstudio_test_connection");
+    const testResult = document.getElementById("lmstudio_test_result");
+    
+    if (!testButton || !testResult) return;
+    
+    // Disable button during test
+    testButton.disabled = true;
+    testButton.innerHTML = '<span class="button-icon">⚡</span> TESTING...';
+    
+    // Clear previous results
+    testResult.innerHTML = '';
+    testResult.className = 'validation-message';
+    
+    try {
+        // Dynamically import lmstudioService
+        const { default: lmstudioService } = await import('../services/lmstudioService.js');
+        
+        const apiKeyInput = document.getElementById("lmstudio_api_key");
+        const baseUrlInput = document.getElementById("lmstudio_base_url");
+        
+        const apiKey = apiKeyInput ? apiKeyInput.value : null;
+        const baseUrl = baseUrlInput ? baseUrlInput.value : null;
+        
+        // Temporarily update the service base URL if provided
+        if (baseUrl) {
+            const originalBaseUrl = lmstudioService.baseUrl;
+            lmstudioService.baseUrl = baseUrl;
+            
+            const result = await lmstudioService.testConnection(apiKey);
+            
+            // Restore original base URL
+            lmstudioService.baseUrl = originalBaseUrl;
+            
+            if (result.success) {
+                testResult.innerHTML = `✅ Connection successful! Response time: ${result.responseTime}ms`;
+                testResult.className = 'validation-message success';
+            } else {
+                testResult.innerHTML = `❌ Connection failed: ${result.error}`;
+                testResult.className = 'validation-message error';
+            }
+        } else {
+            const result = await lmstudioService.testConnection(apiKey);
+            
+            if (result.success) {
+                testResult.innerHTML = `✅ Connection successful! Response time: ${result.responseTime}ms`;
+                testResult.className = 'validation-message success';
+            } else {
+                testResult.innerHTML = `❌ Connection failed: ${result.error}`;
+                testResult.className = 'validation-message error';
+            }
+        }
+    } catch (error) {
+        testResult.innerHTML = `❌ Test failed: ${error.message}`;
+        testResult.className = 'validation-message error';
+    } finally {
+        // Re-enable button
+        testButton.disabled = false;
+        testButton.innerHTML = '<span class="button-icon">⚡</span> TEST LM STUDIO CONNECTION';
+    }
 }
 
 // File handling functions
@@ -998,77 +1067,3 @@ function displayError(error) {
 // Keep track of the current streaming message element
 let currentStreamingMessage = null;
 let currentStreamingContent = '';
-
-// Update streaming message
-function updateStreamingMessage(content) {
-    const chatFeed = document.getElementById("chat_feed");
-    if (!chatFeed) return;
-    
-    // If we don't have a streaming message element, create one
-    if (!currentStreamingMessage) {
-        // Remove existing typing indicator
-        const existingIndicator = document.getElementById("typing-indicator");
-        if (existingIndicator) existingIndicator.remove();
-        
-        // Create new streaming message
-        currentStreamingMessage = document.createElement("div");
-        currentStreamingMessage.className = "message message-assistant streaming";
-        
-        currentStreamingContent = '';
-        
-        const messageBubble = document.createElement("div");
-        messageBubble.className = "message_bubble";
-        
-        const contentDiv = document.createElement("div");
-        contentDiv.className = "message-content";
-        contentDiv.innerHTML = ''; // Will be updated with streaming content
-        
-        const timeDiv = document.createElement("div");
-        timeDiv.className = "message_time";
-        timeDiv.textContent = new Date().toLocaleTimeString();
-        
-        messageBubble.appendChild(contentDiv);
-        messageBubble.appendChild(timeDiv);
-        currentStreamingMessage.appendChild(messageBubble);
-        
-        chatFeed.appendChild(currentStreamingMessage);
-    }
-    
-    // Update content
-    currentStreamingContent += content;
-    
-    // Update the displayed content with rendered markdown
-    const contentDiv = currentStreamingMessage.querySelector(".message-content");
-    if (contentDiv) {
-        contentDiv.innerHTML = window.markdownRenderer.render(currentStreamingContent);
-    }
-    
-    // Scroll to bottom
-    chatFeed.scrollTop = chatFeed.scrollHeight;
-}
-
-// Finalize streaming message
-function finalizeStreamingMessage() {
-    if (currentStreamingMessage) {
-        // Update timestamp
-        const timeDiv = currentStreamingMessage.querySelector(".message_time");
-        if (timeDiv) {
-            timeDiv.textContent = new Date().toLocaleTimeString();
-        }
-        
-        // Remove streaming class
-        currentStreamingMessage.classList.remove("streaming");
-        
-        // Reset streaming variables
-        currentStreamingMessage = null;
-        currentStreamingContent = '';
-    }
-}
-
-// Retry last message
-function retryLastMessage() {
-    // In a full implementation, we would retry the last message
-    console.log("Retry last message functionality would be implemented here");
-    displayError("Retry functionality would be implemented in a full version");
-    window.showToast("Retry functionality coming soon", "info");
-}

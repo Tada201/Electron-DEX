@@ -84,4 +84,5 @@ class MarkdownRenderer {
     }
 }
 
+// Make it available globally
 window.MarkdownRenderer = MarkdownRenderer;

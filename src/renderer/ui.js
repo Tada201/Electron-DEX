@@ -3,7 +3,8 @@ import { _delay } from './utils.js';
 import { loadDefaultProfile } from './profile.js';
 import { loadApiSettings } from './apiSettings.js';
 import { setupEventListeners } from './events.js';
-import Chat from '../classes/chat.class.js';
+import Chat from '../classes/chatbot.class.js';
+import lmstudioService from '../services/lmstudioService.js';
 
 // Load chat history from localStorage or backend
 function loadChatHistory() {
@@ -39,6 +40,53 @@ async function checkBackendConnection() {
         if (statusElement) {
             statusElement.textContent = "OFFLINE";
             statusElement.style.color = "var(--color_red)";
+        }
+    }
+}
+
+// Check LM Studio connection
+async function checkLMStudioConnection() {
+    // Only show LM Studio status when LM Studio provider is selected
+    const providerSelector = document.getElementById("provider_selector");
+    const lmstudioStatusItem = document.getElementById("lmstudio_status_item");
+    
+    if (providerSelector && providerSelector.value === 'lmstudio') {
+        if (lmstudioStatusItem) {
+            lmstudioStatusItem.style.display = "flex";
+        }
+        
+        const statusElement = document.getElementById("lmstudio_connection_status");
+        if (statusElement) {
+            statusElement.textContent = "CHECKING";
+            statusElement.className = "status_value checking";
+        }
+        
+        try {
+            // Dynamically import lmstudioService
+            const { default: lmstudioService } = await import('../services/lmstudioService.js');
+            const result = await lmstudioService.testConnection();
+            
+            if (result.success) {
+                if (statusElement) {
+                    statusElement.textContent = "ONLINE";
+                    statusElement.className = "status_value online";
+                }
+            } else {
+                if (statusElement) {
+                    statusElement.textContent = "OFFLINE";
+                    statusElement.className = "status_value offline";
+                }
+            }
+        } catch (error) {
+            if (statusElement) {
+                statusElement.textContent = "ERROR";
+                statusElement.className = "status_value offline";
+            }
+        }
+    } else {
+        // Hide LM Studio status when not using LM Studio
+        if (lmstudioStatusItem) {
+            lmstudioStatusItem.style.display = "none";
         }
     }
 }
@@ -112,6 +160,7 @@ async function initModularUI() {
 async function initTraditionalUI() {
     // Initialize chat component
     try {
+        const { default: Chat } = await import('../classes/chatbot.class.js');
         window.chat = new Chat({
             parentId: "chat_feed",
             onmessage: handleChatMessage
@@ -141,6 +190,9 @@ async function initTraditionalUI() {
     // Check backend connection
     checkBackendConnection();
     
+    // Check LM Studio connection
+    checkLMStudioConnection();
+    
     // Set up global keyboard navigation
     setupKeyboardNavigation();
     
@@ -162,6 +214,7 @@ async function initUIComponents() {
     
     // Initialize chat component
     try {
+        const { default: Chat } = await import('../classes/chatbot.class.js');
         window.chat = new Chat({
             parentId: "chat_feed",
             onmessage: handleChatMessage
@@ -187,6 +240,9 @@ async function initUIComponents() {
     
     // Check backend connection
     checkBackendConnection();
+    
+    // Check LM Studio connection
+    checkLMStudioConnection();
     
     // Set up global keyboard navigation
     setupKeyboardNavigation();
@@ -998,207 +1054,3 @@ function updateSystemPanelButtons(activePanel, isActive) {
     Object.entries(buttons).forEach(([panelName, button]) => {
         if (button) {
             if (panelName === activePanel && isActive) {
-                button.classList.add('active');
-                button.style.background = 'rgba(var(--color_r), var(--color_g), var(--color_b), 0.3)';
-            } else {
-                button.classList.remove('active');
-                button.style.background = '';
-            }
-        }
-    });
-}
-
-// Toggle session pin
-function toggleSessionPin(sessionId) {
-    console.log("Toggle pin for session:", sessionId);
-    window.showToast("Pin functionality coming soon", "info");
-}
-
-// Delete session
-function deleteSession(sessionId) {
-    if (!confirm('Are you sure you want to delete this session?')) return;
-    
-    console.log("Delete session:", sessionId);
-    
-    // Call backend to delete session
-    fetch(`http://localhost:3001/api/sessions/${sessionId}`, {
-        method: 'DELETE'
-    })
-    .then(response => response.json())
-    .then(result => {
-        if (result.success) {
-            window.showToast('Session deleted successfully', 'success');
-            loadChatHistory(); // Refresh the session list
-        } else {
-            window.showToast(result.error || 'Failed to delete session', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Delete session error:', error);
-        window.showToast('Failed to delete session', 'error');
-    });
-}
-
-// Load a specific chat
-async function loadChat(chatId) {
-    try {
-        const response = await fetch(`http://localhost:3001/api/chat/${chatId}`);
-        const result = await response.json();
-        
-        if (result.success) {
-            // Load chat messages
-            loadChatMessages(result.chat.messages);
-            window.showToast(`Loaded chat: ${result.chat.title}`, 'success');
-        } else {
-            throw new Error(result.error || 'Failed to load chat');
-        }
-    } catch (error) {
-        console.error('Load chat error:', error);
-        window.showToast(`Failed to load chat: ${error.message}`, 'error');
-    }
-}
-
-// Export all chats
-async function exportAllChats() {
-    try {
-        const response = await fetch('http://localhost:3001/api/data/export-all');
-        const result = await response.json();
-        
-        if (result.success) {
-            // Create a blob with the data
-            const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            
-            // Create a temporary link to trigger download
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `all-chats-${Date.now()}.json`;
-            document.body.appendChild(a);
-            a.click();
-            
-            // Clean up
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 100);
-            
-            window.showToast('All chats exported successfully', 'success');
-        } else {
-            throw new Error(result.error || 'Failed to export chats');
-        }
-    } catch (error) {
-        console.error('Export all error:', error);
-        window.showToast(`Export all failed: ${error.message}`, 'error');
-    }
-}
-
-// Import chat data
-async function importChat(file) {
-    try {
-        const fileContent = await readFileAsText(file);
-        const chatData = JSON.parse(fileContent);
-        
-        const response = await fetch('http://localhost:3001/api/data/import', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ chatData })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            window.showToast('Chat imported successfully', 'success');
-            // Refresh the chat list
-            loadChatHistory();
-        } else {
-            throw new Error(result.error || 'Failed to import chat');
-        }
-    } catch (error) {
-        console.error('Import error:', error);
-        window.showToast(`Import failed: ${error.message}`, 'error');
-    }
-}
-
-function readFileAsText(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = event => resolve(event.target.result);
-        reader.onerror = error => reject(error);
-        reader.readAsText(file);
-    });
-}
-
-// Enhanced session search with data management features
-function handleSessionSearch(event) {
-    const query = event.target.value.trim();
-    
-    if (query.length > 2) {
-        // Perform search after a delay to avoid too many requests
-        clearTimeout(window.searchTimeout);
-        window.searchTimeout = setTimeout(async () => {
-            const results = await searchChats(query);
-            // Update UI with search results
-            updateSearchResults(results);
-        }, 300);
-    } else {
-        // Clear search results
-        clearSearchResults();
-    }
-}
-
-// Search chats
-async function searchChats(query) {
-    try {
-        const response = await fetch(`http://localhost:3001/api/data/search?query=${encodeURIComponent(query)}`);
-        const result = await response.json();
-        
-        if (result.success) {
-            return result.results;
-        } else {
-            throw new Error(result.error || 'Failed to search chats');
-        }
-    } catch (error) {
-        console.error('Search error:', error);
-        window.showToast(`Search failed: ${error.message}`, 'error');
-        return [];
-    }
-}
-
-// Update UI with search results
-function updateSearchResults(results) {
-    const chatSessions = document.getElementById('chat_sessions');
-    if (!chatSessions) return;
-    
-    // Clear current sessions
-    chatSessions.innerHTML = '';
-    
-    // Add search results
-    results.forEach(result => {
-        const sessionItem = document.createElement('div');
-        sessionItem.className = 'session_item';
-        sessionItem.dataset.session = result.id;
-        sessionItem.innerHTML = `
-            <span class="session_title">${result.title}</span>
-            <span class="session_time">${new Date(result.updatedAt).toLocaleString()}</span>
-            <div class="session_actions">
-                <button class="session_action pin_btn" title="Pin">📌</button>
-                <button class="session_action delete_btn" title="Delete">🗑</button>
-            </div>
-        `;
-        
-        // Add click handler to load the chat
-        sessionItem.querySelector('.session_title').addEventListener('click', () => {
-            loadChat(result.id);
-        });
-        
-        chatSessions.appendChild(sessionItem);
-    });
-}
-
-// Clear search results and show all sessions
-function clearSearchResults() {
-    // This would reload all sessions
-    loadChatHistory();
-}

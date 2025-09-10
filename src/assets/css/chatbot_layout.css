@@ -74,6 +74,19 @@
     font-weight: bold;
 }
 
+/* LM Studio Status Styles */
+.lmstudio-status .status_value.online {
+    color: rgb(50, 255, 150);
+}
+
+.lmstudio-status .status_value.offline {
+    color: rgb(255, 80, 80);
+}
+
+.lmstudio-status .status_value.checking {
+    color: rgb(255, 200, 50);
+}
+
 /* Main Layout */
 #main_layout {
     flex: 1;

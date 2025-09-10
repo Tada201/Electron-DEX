@@ -22,10 +22,10 @@
         <link rel="stylesheet" href="assets/css/chatbot_layout.css" />
         <link rel="stylesheet" href="assets/css/modal.css" />
 
-        <!-- Load classes -->
-        <script src="classes/chatbot.class.js"></script>
-        <script src="classes/terminal.class.js"></script>
-        <script src="classes/session.class.js"></script>
+        <!-- Load classes as modules -->
+        <script type="module" src="classes/terminal.class.js"></script>
+        <script type="module" src="classes/session.class.js"></script>
+        <script type="module" src="classes/chatbot.class.js"></script>
         <script src="utils/markdown.js"></script>
     </head>
     <body class="solidBackground">
@@ -51,6 +51,10 @@
                     <div class="status_item">
                         <span class="status_label">STATUS:</span>
                         <span class="status_value" id="connection_status">ONLINE</span>
+                    </div>
+                    <div class="status_item lmstudio-status" id="lmstudio_status_item" style="display: none;">
+                        <span class="status_label">LM STUDIO:</span>
+                        <span class="status_value" id="lmstudio_connection_status">CHECKING</span>
                     </div>
                     <div class="status_item">
                         <span class="status_label">TIME:</span>
@@ -323,7 +327,14 @@
                                     <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
                                     <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
                                     <option value="gemini-1.0-pro">Gemini 1.0 Pro</option>
+                                    <option value="__custom__">-- Custom Model --</option>
                                 </select>
+                            </div>
+
+                            <div class="form-group" id="google_custom_model_group" style="display: none;">
+                                <label for="google_custom_model"><span class="field-icon">✏️</span> Custom Model ID</label>
+                                <input type="text" id="google_custom_model" placeholder="Enter custom model ID (e.g., gemini-1.5-pro-latest)" class="form-input">
+                                <div class="help-text">Enter the exact model ID as supported by Google AI Studio</div>
                             </div>
                         </div>
 
@@ -463,6 +474,11 @@
                             <div class="form-group">
                                 <label for="lmstudio_max_tokens"><span class="field-icon">💾</span> Max Tokens</label>
                                 <input type="number" id="lmstudio_max_tokens" min="256" max="32000" value="2048" class="form-input">
+                            </div>
+                            
+                            <div class="form-group">
+                                <button type="button" class="modal-button test" id="lmstudio_test_connection"><span class="button-icon">⚡</span> TEST LM STUDIO CONNECTION</button>
+                                <div class="validation-message" id="lmstudio_test_result"></div>
                             </div>
                         </div>
                     </div>

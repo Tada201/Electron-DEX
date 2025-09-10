@@ -143,3 +143,9 @@ class Terminal {
         }
     }
 }
+
+// Export the Terminal class
+export default Terminal;
+
+// Also make it available globally for backward compatibility
+window.Terminal = Terminal;

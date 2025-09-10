@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Module Import Test</title>
+</head>
+<body>
+    <h1>Module Import Test</h1>
+    <div id="results"></div>
+    
+    <script type="module">
+        console.log('Module test started');
+        const results = document.getElementById('results');
+        
+        // Test importing chatbot class
+        import('../classes/chatbot.class.js')
+          .then(() => {
+            console.log('✅ Chatbot class imported successfully');
+            results.innerHTML += '<p>✅ Chatbot class imported successfully</p>';
+          })
+          .catch(error => {
+            console.error('❌ Error importing Chatbot class:', error);
+            results.innerHTML += `<p>❌ Error importing Chatbot class: ${error.message}</p>`;
+          });
+
+        // Test importing lmstudio service
+        import('../services/lmstudioService.js')
+          .then(() => {
+            console.log('✅ LM Studio service imported successfully');
+            results.innerHTML += '<p>✅ LM Studio service imported successfully</p>';
+          })
+          .catch(error => {
+            console.error('❌ Error importing LM Studio service:', error);
+            results.innerHTML += `<p>❌ Error importing LM Studio service: ${error.message}</p>`;
+          });
+
+        // Test importing markdown renderer
+        import('../utils/markdown.js')
+          .then(() => {
+            console.log('✅ Markdown renderer imported successfully');
+            results.innerHTML += '<p>✅ Markdown renderer imported successfully</p>';
+          })
+          .catch(error => {
+            console.error('❌ Error importing Markdown renderer:', error);
+            results.innerHTML += `<p>❌ Error importing Markdown renderer: ${error.message}</p>`;
+          });
+
+        console.log('Module test completed');
+        results.innerHTML += '<p>Module test completed</p>';
+    </script>
+</body>
+</html>

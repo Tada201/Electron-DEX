@@ -1,4 +1,4 @@
-// Main application logic adapted from eDEX-UI for Tauri chatbot
+ // Main application logic adapted from eDEX-UI for Tauri chatbot
 
 // Security helpers
 window._escapeHtml = text => {
@@ -199,6 +199,9 @@ async function initUI() {
     document.getElementById("app_container").style.display = "flex";
     
     await _delay(200);
+    
+    // Dynamically import the Chatbot class since it's an ES6 module
+    const { default: Chatbot } = await import('./classes/chatbot.class.js');
     
     // Initialize session manager and chatbot
     window.sessionManager = new SessionManager();
@@ -672,7 +675,12 @@ async function streamMessage(message) {
     
     // Get settings
     const settings = JSON.parse(localStorage.getItem('edex-settings') || '{}');
-    
+
+    // Get API key from saved configs
+    const apiConfigs = JSON.parse(localStorage.getItem('edex_api_configs') || '{}');
+    const currentProvider = localStorage.getItem('edex_current_provider') || 'openai';
+    const apiKey = apiConfigs[currentProvider]?.apiKey;
+
     // Add typing indicator that will be updated with streaming content
     const aiMessageDiv = addMessageBubble('ai', '');
     const messageContent = document.createElement('div');
@@ -764,7 +772,8 @@ async function streamMessage(message) {
                 temperature: settings.temperature || 0.7,
                 maxTokens: settings.maxTokens || 2048,
                 topP: settings.topP || 1.0,
-                systemPrompt: settings.systemPrompt
+                systemPrompt: settings.systemPrompt,
+                apiKey: apiKey // Include API key in config
             })
         }), {
             method: 'GET',
@@ -1317,7 +1326,8 @@ class APISettingsManager {
             google: {
                 name: 'Google Gemini',
                 keyPrefix: 'AIza',
-                models: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro'],
+                keyPattern: /^AIza[A-Za-z0-9-_]{35}$/,
+                models: ['gemini-2.0-flash-exp', 'gemini-1.5-pro-latest', 'gemini-1.5-flash-latest', 'gemini-1.0-pro'],
                 endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/'
             },
             mistral: {
@@ -1426,13 +1436,28 @@ class APISettingsManager {
         const lmstudioModelSelect = document.getElementById('lmstudio_model_select');
         const lmstudioCustomModelGroup = document.getElementById('lmstudio_custom_model_group');
         const lmstudioCustomModelInput = document.getElementById('lmstudio_custom_model');
-        
+
         if (lmstudioModelSelect && lmstudioCustomModelGroup) {
             lmstudioModelSelect.addEventListener('change', (e) => {
                 if (e.target.value === '__custom__') {
                     lmstudioCustomModelGroup.style.display = 'block';
                 } else {
                     lmstudioCustomModelGroup.style.display = 'none';
+                }
+            });
+        }
+
+        // Custom model handling for Google Gemini
+        const googleModelSelect = document.getElementById('google_model');
+        const googleCustomModelGroup = document.getElementById('google_custom_model_group');
+        const googleCustomModelInput = document.getElementById('google_custom_model');
+
+        if (googleModelSelect && googleCustomModelGroup) {
+            googleModelSelect.addEventListener('change', (e) => {
+                if (e.target.value === '__custom__') {
+                    googleCustomModelGroup.style.display = 'block';
+                } else {
+                    googleCustomModelGroup.style.display = 'none';
                 }
             });
         }
@@ -1486,7 +1511,7 @@ class APISettingsManager {
         const provider = input.id.split('_')[0];
         const key = input.value.trim();
         const validationMsg = input.parentElement.nextElementSibling;
-        
+
         if (!key) {
             validationMsg.textContent = '';
             validationMsg.className = 'validation-message';
@@ -1507,17 +1532,28 @@ class APISettingsManager {
             return true;
         }
 
-        const expectedPrefix = this.providers[provider]?.keyPrefix;
-        if (expectedPrefix && !key.startsWith(expectedPrefix)) {
-            validationMsg.textContent = `Invalid format. Expected format: ${expectedPrefix}...`;
-            validationMsg.className = 'validation-message error';
-            return false;
-        }
+        // Check for specific regex pattern if available
+        const keyPattern = this.providers[provider]?.keyPattern;
+        if (keyPattern) {
+            if (!keyPattern.test(key)) {
+                validationMsg.textContent = `Invalid format. Expected: ${this.providers[provider].keyPrefix}[35 characters]`;
+                validationMsg.className = 'validation-message error';
+                return false;
+            }
+        } else {
+            // Fallback to prefix check
+            const expectedPrefix = this.providers[provider]?.keyPrefix;
+            if (expectedPrefix && !key.startsWith(expectedPrefix)) {
+                validationMsg.textContent = `Invalid format. Expected format: ${expectedPrefix}...`;
+                validationMsg.className = 'validation-message error';
+                return false;
+            }
 
-        if (key.length < 20) {
-            validationMsg.textContent = 'API key appears too short';
-            validationMsg.className = 'validation-message error';
-            return false;
+            if (key.length < 20) {
+                validationMsg.textContent = 'API key appears too short';
+                validationMsg.className = 'validation-message error';
+                return false;
+            }
         }
 
         validationMsg.textContent = 'Valid format ✓';
@@ -1567,22 +1603,29 @@ class APISettingsManager {
                         'Content-Type': 'application/json'
                     }
                 });
-                
+
                 return response.ok;
             } catch (error) {
                 console.warn('LM Studio connection test failed:', error);
                 return false;
             }
         }
-        
+
         // Simulate API test - In a real implementation, you'd make actual API calls
         return new Promise((resolve) => {
             setTimeout(() => {
-                // Simple validation based on key format
-                const isValid = config.apiKey && 
-                               config.apiKey.length > 20 && 
-                               config.apiKey.startsWith(this.providers[provider].keyPrefix);
-                resolve(isValid);
+                // Check for specific regex pattern if available
+                const keyPattern = this.providers[provider]?.keyPattern;
+                if (keyPattern) {
+                    const isValid = config.apiKey && keyPattern.test(config.apiKey);
+                    resolve(isValid);
+                } else {
+                    // Fallback to prefix check
+                    const isValid = config.apiKey &&
+                                   config.apiKey.length > 20 &&
+                                   config.apiKey.startsWith(this.providers[provider].keyPrefix);
+                    resolve(isValid);
+                }
             }, 1500);
         });
     }
@@ -1602,18 +1645,27 @@ class APISettingsManager {
             config.maxTokens = parseInt(document.getElementById('anthropic_max_tokens')?.value || 4096);
         } else if (provider === 'lmstudio') {
             config.baseUrl = document.getElementById('lmstudio_base_url')?.value.trim() || 'http://localhost:1234/v1';
-            
+
             // Handle custom model selection
             const modelSelect = document.getElementById('lmstudio_model_select');
             if (modelSelect?.value === '__custom__') {
-                config.model = document.getElementById('lmstudio_custom_model')?.value.trim() || 
+                config.model = document.getElementById('lmstudio_custom_model')?.value.trim() ||
                               'lmstudio-community/Meta-Llama-3-8B-Instruct';
             } else {
                 config.model = modelSelect?.value || 'lmstudio-community/Meta-Llama-3-8B-Instruct';
             }
-            
+
             config.temperature = parseFloat(document.getElementById('lmstudio_temperature')?.value || 0.7);
             config.maxTokens = parseInt(document.getElementById('lmstudio_max_tokens')?.value || 2048);
+        } else if (provider === 'google') {
+            // Handle custom model selection for Google Gemini
+            const modelSelect = document.getElementById('google_model');
+            if (modelSelect?.value === '__custom__') {
+                config.model = document.getElementById('google_custom_model')?.value.trim() ||
+                              'gemini-1.5-pro-latest';
+            } else {
+                config.model = modelSelect?.value || 'gemini-1.5-pro';
+            }
         }
 
         return config;
@@ -1687,18 +1739,18 @@ class APISettingsManager {
                         const baseUrlInput = document.getElementById('lmstudio_base_url');
                         if (baseUrlInput) baseUrlInput.value = config.baseUrl;
                     }
-                    
+
                     // Handle custom model loading
                     const modelSelect = document.getElementById('lmstudio_model_select');
                     const customModelGroup = document.getElementById('lmstudio_custom_model_group');
                     const customModelInput = document.getElementById('lmstudio_custom_model');
-                    
+
                     if (config.model) {
                         // Check if the model is in the standard list
-                        const standardModels = ['lmstudio-community/Meta-Llama-3-8B-Instruct', 
-                                              'TheBloke/Mistral-7B-Instruct-v0.2-GGUF', 
+                        const standardModels = ['lmstudio-community/Meta-Llama-3-8B-Instruct',
+                                              'TheBloke/Mistral-7B-Instruct-v0.2-GGUF',
                                               'lmstudio-community/Phi-3-mini-4k-instruct'];
-                        
+
                         if (standardModels.includes(config.model)) {
                             if (modelSelect) modelSelect.value = config.model;
                             if (customModelGroup) customModelGroup.style.display = 'none';
@@ -1709,7 +1761,7 @@ class APISettingsManager {
                             if (customModelInput) customModelInput.value = config.model;
                         }
                     }
-                    
+
                     if (config.temperature !== undefined) {
                         const tempSlider = document.getElementById('lmstudio_temperature');
                         const tempValue = document.getElementById('lmstudio_temp_value');
@@ -1721,6 +1773,26 @@ class APISettingsManager {
                     if (config.maxTokens) {
                         const tokensInput = document.getElementById('lmstudio_max_tokens');
                         if (tokensInput) tokensInput.value = config.maxTokens;
+                    }
+                } else if (provider === 'google') {
+                    // Handle custom model loading for Google Gemini
+                    const modelSelect = document.getElementById('google_model');
+                    const customModelGroup = document.getElementById('google_custom_model_group');
+                    const customModelInput = document.getElementById('google_custom_model');
+
+                    if (config.model) {
+                        // Check if the model is in the standard list
+                        const standardModels = ['gemini-2.0-flash-exp', 'gemini-1.5-pro-latest', 'gemini-1.5-flash-latest', 'gemini-1.0-pro'];
+
+                        if (standardModels.includes(config.model)) {
+                            if (modelSelect) modelSelect.value = config.model;
+                            if (customModelGroup) customModelGroup.style.display = 'none';
+                        } else {
+                            // It's a custom model
+                            if (modelSelect) modelSelect.value = '__custom__';
+                            if (customModelGroup) customModelGroup.style.display = 'block';
+                            if (customModelInput) customModelInput.value = config.model;
+                        }
                     }
                 }
             });
